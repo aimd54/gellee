@@ -89,6 +89,8 @@ link that opens it in Claude. See [the user guide](dashboard.md) and
 
 - Whether any of the prototype's editing returns. The current answer is
   none: editing happens in the files.
+- Whether `/memories` turns run in the memory store's own directory are
+  credited to a project or left counted as `other`.
 
 ## Continuity between machines
 
@@ -125,6 +127,10 @@ code.
 - The deployment repository holds only what one installation needs.
 - The demo mode serves invented data read-only, such as the test
   fixtures, so the dashboard can be shown without a state repository.
+- Publication gate, small gaps left: the `--no-relative` options have no
+  test of their own; committer and sign-off addresses are compared
+  case-sensitively; repositories in the SHA-256 object format are
+  refused.
 
 ## Idea notebook and articles
 
