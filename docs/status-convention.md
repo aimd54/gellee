@@ -21,7 +21,7 @@ git activity and token usage.
 
 ```markdown
 ---
-project: public-github/webapp
+project: oss/webapp
 state: active
 group: webapp
 updated: 2026-11-09
