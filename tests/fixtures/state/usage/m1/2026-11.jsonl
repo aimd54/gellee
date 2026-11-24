@@ -1,0 +1,5 @@
+{"day":"2026-11-04","session":"s3","project":"alpha/gone","model":"model-a","input":1,"output":1,"cache_write":1,"cache_read":1,"messages":1}
+{"day":"2026-11-10","session":"s1","project":"alpha/fern","model":"model-a","input":10,"output":100,"cache_write":1000,"cache_read":10000,"messages":2}
+{"day":"2026-11-10","session":"s1","project":"beta/tool","model":"model-b","input":5,"output":50,"cache_write":500,"cache_read":5000,"messages":1}
+{"day":"2026-11-11","session":"s2","project":"alpha/old-name","model":"model-a","input":2,"output":20,"cache_write":200,"cache_read":2000,"messages":1}
+{"day":"2026-11-11","session":"s2","project":"other","model":"model-a","input":7,"output":70,"cache_write":700,"cache_read":7000,"messages":1}

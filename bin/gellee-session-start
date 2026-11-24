@@ -1,0 +1,188 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# SessionStart hook: add the current project's status file and any
+# warnings to the session context, and show the user a short notice.
+# Never fails the session.
+set -euo pipefail
+
+# shellcheck source=../lib/gellee.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/gellee.sh"
+
+# note <text>: a line of the notice shown to the user.
+note() {
+  printf '%s\n' "$*" >&3
+}
+
+# warn <text>: a warning, both in the context and in the notice.
+warn() {
+  printf 'gellee warning: %s\n' "$*"
+  note "warning: $*"
+}
+
+main() {
+  local input="" cwd="$PWD" from_input key
+
+  if [ ! -t 0 ]; then
+    input=$(cat)
+  fi
+  if [ -n "$input" ]; then
+    from_input=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null ||
+      true)
+    if [ -n "$from_input" ]; then
+      cwd=$from_input
+    fi
+  fi
+
+  gellee_load_config
+  key=$(gellee_project_key "$cwd") || return 0
+  pull_state
+  status "$key"
+  private "$cwd"
+  memories "$key"
+}
+
+# pull_state: brings the state repository up to its remote, fast-forward
+# only. The fetch gets 5 seconds where timeout exists. Silent when the
+# repository has no remote.
+pull_state() {
+  local limit=()
+  if [ -z "$(git -C "$GELLEE_STATE" remote 2>/dev/null)" ]; then
+    return 0
+  fi
+  if command -v timeout >/dev/null; then
+    limit=(timeout 5)
+  fi
+  if ! GIT_TERMINAL_PROMPT=0 ${limit[@]+"${limit[@]}"} \
+    git -C "$GELLEE_STATE" fetch -q >/dev/null 2>&1 ||
+    ! git -C "$GELLEE_STATE" merge -q --ff-only '@{upstream}' >/dev/null 2>&1; then
+    note "gellee: the state repository could not be updated; the status may be out of date."
+  fi
+}
+
+# private <cwd>: links the project's private files into the session's
+# checkout and passes the summary on when something happened or failed.
+private() {
+  local out="" rc=0 line
+  if [ ! -d "$GELLEE_STATE/private" ] || ! command -v gellee >/dev/null; then
+    return 0
+  fi
+  out=$(gellee private link --dir "$1" 2>/dev/null) || rc=$?
+  while IFS= read -r line; do
+    case $line in
+    "private: nothing to report") ;;
+    "private: "*) note "gellee $line" ;;
+    esac
+  done <<<"$out"
+  # Exit status 3 means the directory is not a project checkout.
+  if [ "$rc" -ne 0 ] && [ "$rc" -ne 3 ]; then
+    note "gellee: private files could not be linked; run gellee private status."
+  fi
+}
+
+# status <key>: the project's status file and its warnings.
+status() {
+  local key=$1 file state updated last reason
+  local count=0 names="" f project next msg
+  file="$GELLEE_STATE/$key.md"
+
+  if [ ! -f "$file" ]; then
+    msg="gellee: no status file for $key. "
+    msg+="Run /handoff at the end of this session to create it."
+    printf '%s\n' "$msg"
+    note "$msg"
+    return 0
+  fi
+
+  printf 'gellee status for %s (%s):\n\n' "$key" "$file"
+  cat "$file"
+  printf '\n'
+
+  if ! gellee_valid "$file"; then
+    warn "malformed frontmatter in $file"
+    return 0
+  fi
+
+  state=$(gellee_fm "$file" state)
+  updated=$(gellee_fm "$file" updated)
+  next=$(gellee_next_action "$file")
+  if [ -n "$next" ]; then
+    note "gellee: $key is $state. Next: $next"
+  else
+    note "gellee: $key is $state. No handoff yet."
+  fi
+
+  last=$(gellee_last_commit "$GELLEE_PROJECTS_ROOT/$key")
+  if [ -n "$last" ] && [[ "$updated" < "$last" ]]; then
+    warn "status dated $updated is older than the last commit ($last)."
+  fi
+  if [ "$state" = parked ]; then
+    reason=$(gellee_fm "$file" parked_reason)
+    warn "this project is parked: ${reason:-no reason recorded}"
+  fi
+
+  while IFS= read -r f; do
+    if [ "$(gellee_fm "$f" state)" = active ]; then
+      project=${f#"$GELLEE_STATE"/}
+      project=${project%.md}
+      count=$((count + 1))
+      names+="${names:+, }$project"
+    fi
+  done < <(gellee_status_files)
+  if [ "$count" -gt "$GELLEE_LIMIT" ]; then
+    warn "$count active projects, limit is $GELLEE_LIMIT: $names"
+  fi
+}
+
+# memories <key>: sync the memory store and pass its notices on, in the
+# context and to the user. Silent where the store is not set up. Only
+# the command's own notice lines are passed on.
+memories() {
+  local line
+  if [ -z "${GELLEE_MEMORIES:-}" ] || ! command -v gellee >/dev/null; then
+    return 0
+  fi
+  while IFS= read -r line; do
+    case $line in
+    "memories: "*)
+      printf 'gellee %s\n' "$line"
+      note "gellee $line"
+      ;;
+    esac
+  done < <(gellee memories notices --sync --project "$1" 2>/dev/null || true)
+}
+
+# emit <context> <notice>: one JSON object for Claude Code, or the plain
+# context when jq cannot build it.
+emit() {
+  local json=""
+  json=$(jq -n --arg c "$1" --arg m "$2" '
+    {hookSpecificOutput: {hookEventName: "SessionStart",
+      additionalContext: $c}}
+    + (if $m == "" then {} else {systemMessage: $m} end)
+  ' 2>/dev/null) || json=""
+  if [ -n "$json" ]; then
+    printf '%s\n' "$json"
+  else
+    printf '%s\n' "$1"
+  fi
+}
+
+rc=0
+notice=""
+notice_file=$(mktemp 2>/dev/null) || notice_file=/dev/null
+out=$(main 3>"$notice_file" 2>&1) || rc=$?
+if [ "$notice_file" != /dev/null ]; then
+  notice=$(cat "$notice_file")
+  rm -f "$notice_file"
+fi
+if [ "$rc" -ne 0 ]; then
+  last_line=$(printf '%s\n' "$out" | tail -n 1)
+  out="gellee: session start skipped: ${last_line#gellee: }"
+  notice=$out
+fi
+if [ -n "$out" ]; then
+  emit "$out" "$notice"
+fi
+exit 0

@@ -1,0 +1,50 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# release-notes <tag>: Markdown notes from the Conventional Commit
+# subjects between the previous v* tag and <tag>.
+set -euo pipefail
+
+tag=${1:?usage: release-notes <tag>}
+git rev-parse --verify -q "$tag^{commit}" >/dev/null || { echo "no tag $tag" >&2; exit 1; }
+prev=$(git describe --tags --abbrev=0 --match 'v*' "$tag^" 2>/dev/null || true)
+range=$tag
+[ -z "$prev" ] || range="$prev..$tag"
+
+breaking=() feats=() fixes=() others=()
+while IFS= read -r -d '' rec; do
+  subject=${rec%%$'\n'*}
+  body=${rec#*$'\n'}
+  re='^([a-z]+)(\(([^)]+)\))?(!)?: (.+)$'
+  if [[ $subject =~ $re ]]; then
+    type=${BASH_REMATCH[1]} scope=${BASH_REMATCH[3]} bang=${BASH_REMATCH[4]} text=${BASH_REMATCH[5]}
+    line=$text
+    [ -z "$scope" ] || line="$text ($scope)"
+    if [ -n "$bang" ] || [[ $body == *'BREAKING CHANGE:'* ]]; then
+      breaking+=("$line")
+    elif [ "$type" = feat ]; then feats+=("$line")
+    elif [ "$type" = fix ]; then fixes+=("$line")
+    else others+=("$subject")
+    fi
+  else
+    others+=("$subject")
+  fi
+done < <(git log -z --reverse --format='%s%n%b' "$range")
+
+# A code span keeps a subject such as "@scope/pkg" from mentioning anyone.
+quote_mentions() { sed -E 's|@([A-Za-z0-9_][A-Za-z0-9_./-]*)|\x60@\1\x60|g'; }
+
+first=1
+section() {
+  local title=$1; shift
+  [ $# -gt 0 ] || return 0
+  [ "$first" = 1 ] || echo
+  first=0
+  printf '## %s\n\n' "$title"
+  printf -- '- %s\n' "$@" | quote_mentions
+}
+section 'Breaking changes' "${breaking[@]}"
+section Features "${feats[@]}"
+section Fixes "${fixes[@]}"
+section 'Other changes' "${others[@]}"

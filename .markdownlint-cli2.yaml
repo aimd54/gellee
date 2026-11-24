@@ -1,0 +1,11 @@
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+
+config:
+  # Line length: wide tables and long links are kept on purpose.
+  MD013: false
+  # Table pipe alignment: padded and compact tables are both fine.
+  MD060: false
+  # Hard tabs: Makefile excerpts in code blocks need them.
+  MD010:
+    code_blocks: false

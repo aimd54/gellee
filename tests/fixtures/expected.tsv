@@ -1,0 +1,7 @@
+file	valid	state	updated	next
+alpha/broken.md	no	sleeping	2026-11-01	Fix the state.
+alpha/fern-docs.md	yes	parked	2026-10-20	Review the install page.
+alpha/fern.md	yes	active	2026-11-09	Run the task 17 review, then merge the branch.
+alpha/renamed.md	yes	active	2026-11-10	Update the links.
+beta/legacy.md	yes	done	2026-09-01	Nothing, see the replacement.
+beta/tool.md	yes	active	2026-11-11	Add the table parser.

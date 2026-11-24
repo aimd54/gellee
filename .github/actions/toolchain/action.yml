@@ -1,0 +1,30 @@
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Toolchain
+description: >-
+  Builds the toolchain image from ci/toolchain.Dockerfile with the
+  Actions cache, never publishing it, and starts the job's container.
+runs:
+  using: composite
+  steps:
+    - name: Playwright image
+      id: base
+      shell: bash
+      run: echo "image=$(make -s --no-print-directory playwright-image)" >> "$GITHUB_OUTPUT"
+    - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+    - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+      with:
+        context: .
+        file: ci/toolchain.Dockerfile
+        build-args: PLAYWRIGHT_IMAGE=${{ steps.base.outputs.image }}
+        tags: gellee-ci
+        load: true
+        push: false
+        cache-from: type=gha,scope=toolchain
+        cache-to: type=gha,scope=toolchain,mode=max
+    - name: Start
+      shell: bash
+      env:
+        CI_IMAGE_PREBUILT: '1'
+      run: ci/scripts/toolchain start

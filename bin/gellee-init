@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Create a stub status file for every project directory under the
+# configured roots. Existing files are never touched.
+set -euo pipefail
+
+# shellcheck source=../lib/gellee.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/gellee.sh"
+
+gellee_load_config
+today=$(date +%F)
+cutoff=$(date -d "$GELLEE_ACTIVE_DAYS days ago" +%F)
+created=0
+
+for root in $GELLEE_ROOTS; do
+  if [ ! -d "$GELLEE_PROJECTS_ROOT/$root" ]; then
+    continue
+  fi
+  for dir in "$GELLEE_PROJECTS_ROOT/$root"/*/; do
+    if [ ! -d "$dir" ]; then
+      continue
+    fi
+    key="$root/$(basename "$dir")"
+    file="$GELLEE_STATE/$key.md"
+    if [ -e "$file" ]; then
+      continue
+    fi
+    last=$(gellee_last_commit "${dir%/}")
+    state=parked
+    if [ -n "$last" ] && [[ ! "$last" < "$cutoff" ]]; then
+      state=active
+    fi
+    mkdir -p "$(dirname "$file")"
+    {
+      printf -- '---\nproject: %s\nstate: %s\n' "$key" "$state"
+      if [ "$state" = parked ]; then
+        printf 'parked_reason: stub, not yet reviewed\n'
+      fi
+      printf 'updated: %s\n---\n\n' "$today"
+      printf '## Where I stopped\n\n## Next action\n\n'
+      printf '## Remaining\n\n## Ideas\n'
+    } >"$file"
+    created=$((created + 1))
+    printf 'created %s (%s)\n' "$key" "$state"
+  done
+done
+printf '%d stub(s) created\n' "$created"

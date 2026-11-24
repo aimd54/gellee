@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Runs a job's gates in the image of ci/toolchain.Dockerfile, on the
+# engine the job's docker client is connected to.
+#
+#   toolchain start             build the image, start the job's container
+#                               and copy this checkout into its /src
+#   toolchain run [-C dir] cmd  run cmd in /src, or in /src/dir
+#   toolchain stop              remove the job's container
+#
+# CI_IMAGE_PREBUILT=1 skips the build when the job built the image already.
+#
+# A bind mount would resolve on the engine's host, not in the job, so the
+# checkout is copied in. One container serves every step of a job, which
+# keeps node_modules and the Go caches between them. It removes itself
+# after an hour, the runner's limit, if stop never runs.
+set -euo pipefail
+
+root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+name="gellee-ci-${GITHUB_RUN_ID:-local}-${GITHUB_JOB:-job}"
+image=${CI_IMAGE:-gellee-ci}
+
+case "${1:-}" in
+  start)
+    if [ -z "${CI_IMAGE_PREBUILT:-}" ]; then
+      make -C "$root" --no-print-directory ci-image CI_IMAGE="$image"
+    fi
+    docker rm --force "$name" >/dev/null 2>&1 || true
+    docker run --detach --rm --init --ipc=host --name "$name" \
+      "$image" sleep 3600 >/dev/null
+    docker cp "$root/." "$name:/src"
+    docker exec "$name" mise list --current
+    ;;
+  run)
+    shift
+    dir=/src
+    if [ "${1:-}" = -C ]; then
+      dir="/src/$2"
+      shift 2
+    fi
+    [ $# -gt 0 ] || { echo "usage: toolchain run [-C dir] cmd..." >&2; exit 2; }
+    docker exec --workdir "$dir" "$name" "$@"
+    ;;
+  stop)
+    docker rm --force "$name" >/dev/null 2>&1 || true
+    ;;
+  *)
+    echo "usage: toolchain start | run [-C dir] cmd... | stop" >&2
+    exit 2
+    ;;
+esac

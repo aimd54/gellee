@@ -1,0 +1,5 @@
+*
+!ci/scripts/install-mise
+!.mise/locks/
+!mise.lock
+!mise.toml

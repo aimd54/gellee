@@ -1,0 +1,95 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:best-practices"
+  ],
+  "schedule": [
+    "before 7am on monday"
+  ],
+  "prConcurrentLimit": 5,
+  "rebaseWhen": "behind-base-branch",
+  "semanticCommits": "enabled",
+  "semanticCommitType": "build",
+  "semanticCommitScope": "deps",
+  "commitBody": "Signed-off-by: {{{gitAuthor}}}",
+  "postUpdateOptions": [
+    "gomodTidy"
+  ],
+  "vulnerabilityAlerts": {
+    "schedule": [
+      "at any time"
+    ]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "The Playwright image the Makefile runs the browser tests in",
+      "managerFilePatterns": [
+        "/^Makefile$/"
+      ],
+      "matchStrings": [
+        "PLAYWRIGHT_IMAGE := (?<depName>[^:\\s]+):(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "govulncheck, run from the Makefile at a fixed version",
+      "managerFilePatterns": [
+        "/^Makefile$/"
+      ],
+      "matchStrings": [
+        "GOVULNCHECK := (?<depName>golang\\.org/x/vuln)/cmd/govulncheck@(?<currentValue>\\S+)"
+      ],
+      "datasourceTemplate": "go"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "The browser image and the test library carry the same version and move together",
+      "matchPackageNames": [
+        "@playwright/test",
+        "mcr.microsoft.com/playwright"
+      ],
+      "groupName": "playwright"
+    },
+    {
+      "description": "Go is pinned in three places that have to agree: mise.toml, the build image and go.mod",
+      "matchPackageNames": [
+        "go",
+        "golang"
+      ],
+      "groupName": "go toolchain"
+    },
+    {
+      "description": "Node is pinned in mise.toml and in the build image",
+      "matchPackageNames": [
+        "node"
+      ],
+      "groupName": "node"
+    },
+    {
+      "description": "mise is released almost daily: one update a month is enough",
+      "matchPackageNames": [
+        "jdx/mise"
+      ],
+      "schedule": [
+        "on the first day of the month"
+      ]
+    },
+    {
+      "description": "Minor and patch updates of the interface's development tools arrive as one change",
+      "matchManagers": [
+        "npm"
+      ],
+      "matchDepTypes": [
+        "devDependencies"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "groupName": "interface development tools"
+    }
+  ]
+}

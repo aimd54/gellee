@@ -1,0 +1,83 @@
+/* Copyright The gellee Authors
+   SPDX-License-Identifier: Apache-2.0 */
+
+/* The interface's tokens. Colour means state, and the accent means
+   "this is where to act". The series colours are used by the stacked
+   chart only. */
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Next';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: block;
+  src: url('@fonts-next/atkinson-hyperlegible-next-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+@font-face {
+  font-family: 'Atkinson Hyperlegible Mono';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: block;
+  src: url('@fonts-mono/atkinson-hyperlegible-mono-latin-wght-normal.woff2') format('woff2-variations');
+}
+
+:root {
+  --gl-font-ui: 'Atkinson Hyperlegible Next', sans-serif;
+  --gl-font-mono: 'Atkinson Hyperlegible Mono', monospace;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --gl-canvas: #f3f6fb;
+  --gl-rail: #eaedf2;
+  --gl-surface: #ffffff;
+  --gl-border: #d3d6da;
+  --gl-text: #1e1f21;
+  --gl-muted: #585b5f;
+  --gl-accent: #2c6e49;
+  --gl-on-accent: #ffffff;
+  --gl-accent-tint: #e8f1ea;
+  --gl-late: #9f5e0a;
+  --gl-late-tint: #f9f3ef;
+  --gl-failed: #99000d;
+  --gl-failed-tint: #faefed;
+  --gl-unknown: #5e646c;
+  --gl-unknown-tint: #f3f3f4;
+  --gl-done: #2b5c9e;
+  --gl-done-tint: #edf2f9;
+  --gl-series-1: #47702c;
+  --gl-series-2: #2b6cb0;
+  --gl-series-3: #8a5a00;
+  --gl-series-4: #7b3fa0;
+  --gl-series-5: #0f766e;
+  --gl-series-6: #b4532a;
+  --gl-series-rest: #8a9087;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --gl-canvas: #0a0f15;
+  --gl-rail: #060a11;
+  --gl-surface: #171a1d;
+  --gl-border: #30363e;
+  --gl-text: #e9edf2;
+  --gl-muted: #abb2bb;
+  --gl-accent: #8fd3a4;
+  --gl-on-accent: #0a0f15;
+  --gl-accent-tint: #1c2a23;
+  --gl-late: #fec348;
+  --gl-late-tint: #322f27;
+  --gl-failed: #f75d59;
+  --gl-failed-tint: #332526;
+  --gl-unknown: #a0a5ac;
+  --gl-unknown-tint: #282b2e;
+  --gl-done: #8ab4ee;
+  --gl-done-tint: #1d2633;
+  --gl-series-1: #a3cf7f;
+  --gl-series-2: #7fb2e5;
+  --gl-series-3: #f2bd4b;
+  --gl-series-4: #d59be8;
+  --gl-series-5: #5fd0c5;
+  --gl-series-6: #f29b76;
+  --gl-series-rest: #6b746c;
+}

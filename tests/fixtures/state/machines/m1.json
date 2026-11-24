@@ -1,0 +1,40 @@
+{
+  "collected": "2026-11-11T10:00:00+01:00",
+  "claude_code": "2.1.323",
+  "memories": {
+    "pushed": "2026-11-11T09:50:00+01:00",
+    "set_aside": 1
+  },
+  "sessions": [
+    {
+      "id": "4f1d2c3b-0000-4000-8000-000000000001",
+      "project": "beta/tool",
+      "branch": "main",
+      "title": "Parse nested lists",
+      "remote": "session_01FixtureToolSession",
+      "started": "2026-11-11T08:10:00+01:00",
+      "last": "2026-11-11T09:55:00+01:00",
+      "ended": false
+    },
+    {
+      "id": "4f1d2c3b-0000-4000-8000-000000000002",
+      "project": "alpha/fern",
+      "branch": "m2-task-17",
+      "title": "Review task 17",
+      "remote": "",
+      "started": "2026-11-10T09:00:00+01:00",
+      "last": "2026-11-10T11:02:00+01:00",
+      "ended": false
+    },
+    {
+      "id": "4f1d2c3b-0000-4000-8000-000000000003",
+      "project": "other",
+      "branch": "",
+      "title": "",
+      "remote": "",
+      "started": "2026-11-10T12:00:00+01:00",
+      "last": "2026-11-10T12:30:00+01:00",
+      "ended": true
+    }
+  ]
+}

@@ -1,0 +1,119 @@
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  # A vulnerability is published without any commit here.
+  schedule:
+    - cron: '23 5 * * 1'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# Every job starts one container of the toolchain image and calls
+# Makefile targets in it, so a job and the same target on a working
+# machine run the same thing.
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/toolchain # zizmor: ignore[self-repository] actionlint rejects the $/ form
+      - run: ci/scripts/toolchain run make fmt-check vet tidy-check lint lint-ci lint-docs
+      - if: always()
+        run: ci/scripts/toolchain stop
+
+  test:
+    name: Test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/toolchain # zizmor: ignore[self-repository] actionlint rejects the $/ form
+      - run: ci/scripts/toolchain run make test
+      - if: always()
+        run: ci/scripts/toolchain stop
+
+  web:
+    name: Interface
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/toolchain # zizmor: ignore[self-repository] actionlint rejects the $/ form
+      - run: ci/scripts/toolchain run make web-check
+      - if: always()
+        run: ci/scripts/toolchain stop
+
+  browser:
+    name: Build and browser tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/toolchain # zizmor: ignore[self-repository] actionlint rejects the $/ form
+      - run: ci/scripts/toolchain run make build
+      - run: ci/scripts/toolchain run -C web npx playwright test
+      - if: always()
+        run: ci/scripts/toolchain stop
+
+  vuln:
+    name: Known vulnerabilities
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/toolchain # zizmor: ignore[self-repository] actionlint rejects the $/ form
+      - run: ci/scripts/toolchain run make vuln
+      - if: always()
+        run: ci/scripts/toolchain stop
+
+  gate:
+    name: CI gate
+    if: always()
+    needs: [lint, test, web, browser, vuln]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Every job passed or stood down
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          read -ra results <<<"$RESULTS"
+          [ "${#results[@]}" -eq 5 ] || { echo "expected 5 results, got ${#results[@]}"; exit 1; }
+          for r in "${results[@]}"; do
+            case "$r" in success | skipped) ;; *) echo "a job ended: $r"; exit 1 ;; esac
+          done
+          echo "5 jobs: $RESULTS"

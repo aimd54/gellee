@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# require-runs <workflow file>...: reads workflow runs as one JSON object
+# per line on stdin and succeeds when, for every named file under
+# .github/workflows, the latest run is completed and successful.
+set -euo pipefail
+
+runs=$(cat)
+failed=0
+for wf in "$@"; do
+  latest=$(jq -c --arg p ".github/workflows/$wf" \
+    'select(.path == $p)' <<<"$runs" | jq -sc 'sort_by([.run_number, .run_attempt]) | last // empty')
+  if [ -z "$latest" ]; then
+    echo "$wf has no run"; failed=1; continue
+  fi
+  status=$(jq -r .status <<<"$latest")
+  conclusion=$(jq -r '.conclusion // ""' <<<"$latest")
+  if [ "$status" != completed ]; then
+    echo "$wf: $status, not success"; failed=1
+  elif [ "$conclusion" != success ]; then
+    echo "$wf: completed $conclusion, not success"; failed=1
+  fi
+done
+[ "$failed" = 0 ] || exit 1
+echo "$# workflows succeeded"

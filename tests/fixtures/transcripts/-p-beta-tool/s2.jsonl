@@ -1,0 +1,1 @@
+{"type":"assistant","timestamp":"2026-11-11T09:00:00.000Z","cwd":"/p/alpha/old-name","message":{"id":"m6","model":"model-a","usage":{"input_tokens":2,"output_tokens":20,"cache_creation_input_tokens":200,"cache_read_input_tokens":2000}}}

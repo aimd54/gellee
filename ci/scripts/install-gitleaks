@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Installs one fixed release of gitleaks, checked against its published
+# digest, into ~/.local/bin, and puts that directory on the path of the
+# steps that follow. The version matches the pin in mise.toml.
+set -euo pipefail
+
+version=8.28.0
+case "$(uname -m)" in
+  x86_64) arch=x64 sum=a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb ;;
+  aarch64) arch=arm64 sum=eff65261156100e5d94a6b3dec313d532fddfe19ae1590bf7a2b4f2699128356 ;;
+  *) echo "no gitleaks release is pinned for $(uname -m)" >&2; exit 1 ;;
+esac
+
+dir="$HOME/.local/bin"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+mkdir -p "$dir"
+curl -fsSL -o "$tmp/gitleaks.tar.gz" \
+  "https://github.com/gitleaks/gitleaks/releases/download/v$version/gitleaks_${version}_linux_$arch.tar.gz"
+echo "$sum  $tmp/gitleaks.tar.gz" | sha256sum -c -
+tar -xzf "$tmp/gitleaks.tar.gz" -C "$tmp" gitleaks
+install -m 0755 "$tmp/gitleaks" "$dir/gitleaks"
+"$dir/gitleaks" version
+
+if [ -n "${GITHUB_PATH:-}" ]; then
+  echo "$dir" >> "$GITHUB_PATH"
+fi

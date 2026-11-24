@@ -1,0 +1,69 @@
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Publication gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+    tags: ['v*']
+
+permissions: {}
+
+concurrency:
+  group: gate-${{ github.ref }}
+  cancel-in-progress: false
+
+# Branches of this repository are checked with the deny-list from the
+# GATE_DENYLIST secret. Pull requests from forks get no secrets and are
+# never shown the deny-list's verdict: the job runs the other checks,
+# then fails, and a maintainer re-pushes the commits as a branch here.
+# The job never uses pull_request_target.
+
+jobs:
+  gate:
+    name: Publication gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: gitleaks
+        run: ci/scripts/install-gitleaks
+      - name: Gate with the deny-list
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GATE_DENYLIST: ${{ secrets.GATE_DENYLIST }}
+          EVENT: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_REF: ${{ github.head_ref }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          umask 077
+          printf '%s\n' "$GATE_DENYLIST" > "$RUNNER_TEMP/denylist"
+          export GELLEE_DENYLIST="$RUNNER_TEMP/denylist"
+          case "$EVENT" in
+            pull_request) ci/public-gate --ref "refs/heads/$HEAD_REF" "$HEAD_SHA" "$BASE_SHA" ;;
+            push)
+              if [[ $GITHUB_REF == refs/tags/* ]]; then
+                ci/public-gate "$GITHUB_REF"
+              elif [[ $BEFORE =~ ^0+$ ]]; then
+                ci/public-gate --ref "$GITHUB_REF" "$GITHUB_SHA"
+              else
+                ci/public-gate --ref "$GITHUB_REF" "$GITHUB_SHA" "$BEFORE"
+              fi ;;
+            *) echo "unexpected event $EVENT"; exit 1 ;;
+          esac
+      - name: Gate without the deny-list, for a fork
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: ci/public-gate --without-denylist "$HEAD_SHA" "$BASE_SHA"

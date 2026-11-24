@@ -1,0 +1,303 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Checks commits, trees and ref names before they reach the public
+# repository: root guard, metadata, deny-list and gitleaks.
+#
+#   public-gate [--ref NAME]... [--without-denylist] <tip> [<exclude>...]
+#   public-gate [--without-denylist] --all
+#
+# Output names the check, file, commit and pattern line number, never a
+# pattern or a matched value. Anything missing is a failure.
+set -euo pipefail
+# Replace refs and grafts would make every check read objects other than
+# the ones a push sends.
+export GIT_NO_REPLACE_OBJECTS=1
+
+maintainers=(1679489+aimd54@users.noreply.github.com)
+github_committer=noreply@github.com
+# Built in two parts so this file does not carry the marker it rejects.
+allow_marker="gitleaks"':allow'
+
+failures=0
+say() { printf 'public-gate: %s\n' "$*" >&2; }
+fail() { say "$*"; failures=$((failures + 1)); }
+die() { say "$*"; exit 1; }
+
+all=0 without=0 refs=() revs=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --all) all=1 ;;
+    --ref) [ $# -ge 2 ] || die "--ref needs a name"; refs+=("$2"); shift ;;
+    --without-denylist) without=1 ;;
+    *) revs+=("$1") ;;
+  esac
+  shift
+done
+
+git rev-parse --git-dir >/dev/null 2>&1 || die "not in a git repository"
+command -v jq >/dev/null || die "jq is not installed"
+work=$(mktemp -d)
+trap 'rm -rf "$work"' EXIT
+# gitleaks also reads ignore files and configuration from its working
+# directory, the environment and the scanned path. The ignore path is an empty
+# directory, the environment variables are unset, the configuration is an
+# explicit default one, and a .gitleaksignore in the git directory is refused.
+unset GITLEAKS_CONFIG GITLEAKS_CONFIG_TOML TAR_OPTIONS
+mkdir "$work/noignore"
+printf '[extend]\nuseDefault = true\n' >"$work/gitleaks.toml"
+
+# --- What to check: commits, tips, ref names, tag messages ---------------
+tips=() tagobjs=()
+if [ "$all" = 1 ]; then
+  [ ${#revs[@]} -eq 0 ] || die "--all takes no revisions"
+  mapfile -t refnames < <(git for-each-ref --format='%(refname)')
+  [ ${#refnames[@]} -gt 0 ] || die "no refs to check"
+  for r in "${refnames[@]}"; do
+    t=$(git rev-parse --verify -q "$r^{commit}") || die "ref $r does not name a commit"
+    tips+=("$t")
+    [ "$(git cat-file -t "$r")" = tag ] && tagobjs+=("$r")
+  done
+  refs+=("${refnames[@]}")
+  anchor=$(git rev-parse --verify -q 'refs/heads/main^{commit}') || anchor=${tips[0]}
+  out=$(git rev-list --all) || die "the refs do not resolve"
+  logopts=(--all)
+else
+  [ ${#revs[@]} -ge 1 ] ||
+    die "usage: public-gate [--ref NAME]... [--without-denylist] <tip> [<exclude>...] | --all"
+  tip=$(git rev-parse --verify -q "${revs[0]}^{commit}") || die "revision ${revs[0]} does not resolve"
+  tips=("$tip")
+  [ "$(git cat-file -t "${revs[0]}")" = tag ] && tagobjs+=("${revs[0]}")
+  anchor=$tip
+  excludes=("${revs[@]:1}")
+  out=$(git rev-list "$tip" --not "${excludes[@]}") || die "the range does not resolve"
+  logopts=("$tip" --not "${excludes[@]}")
+fi
+# The history scan reads git log -p, which follows the caller's diff
+# settings and attributes unless they are overridden here.
+logopts+=(--diff-merges=first-parent --no-color --text --no-textconv --no-ext-diff --no-relative)
+commits=()
+[ -z "$out" ] || mapfile -t commits <<<"$out"
+
+# --- Deny-list -----------------------------------------------------------
+patterns=() plines=()
+if [ "$without" = 0 ]; then
+  file=${GELLEE_DENYLIST:-$(git config --get gellee.denylist || true)}
+  [ -n "$file" ] || die "deny-list: no file named by GELLEE_DENYLIST or gellee.denylist"
+  [ -n "${GELLEE_DENYLIST:-}" ] || [[ $file == /* ]] || die "deny-list: gellee.denylist is not an absolute path"
+  [ -r "$file" ] && [ -f "$file" ] || die "deny-list: cannot read the file"
+  [ "$(head -c 2 "$file" | od -An -tx1 | tr -d ' ')" != fffe ] &&
+    [ "$(head -c 2 "$file" | od -An -tx1 | tr -d ' ')" != feff ] ||
+    die "deny-list: the file is UTF-16, not UTF-8"
+  [ "$(tr -d '\000' <"$file" | wc -c)" = "$(wc -c <"$file")" ] || die "deny-list: the file holds a NUL byte"
+  n=0
+  while IFS= read -r line || [ -n "$line" ]; do
+    n=$((n + 1))
+    [ "$n" -gt 1 ] || line=${line#$'\xef\xbb\xbf'}
+    while [[ $line == *$'\r' ]]; do line=${line%$'\r'}; done
+    [[ $line =~ ^[[:space:]]*(#|$) ]] && continue
+    ! [[ $line =~ [[:cntrl:]] ]] || die "deny-list: line $n holds a control character"
+    rc=0; printf '\n' | grep -qiE -e "$line" 2>/dev/null || rc=$?
+    [ "$rc" -ne 0 ] || die "deny-list: line $n matches the empty string"
+    [ "$rc" -eq 1 ] || die "deny-list: line $n is not a valid expression"
+    patterns+=("$line"); plines+=("$n")
+  done <"$file"
+  [ ${#patterns[@]} -gt 0 ] || die "deny-list: no patterns"
+fi
+
+# Tree listings and archives are limited to the working directory, so a
+# checkout runs from its top level. A bare repository has none.
+# GIT_DIR and GIT_WORK_TREE from the caller are made absolute first.
+top=$(git rev-parse --show-toplevel 2>/dev/null) || top=
+if [ -n "${GIT_DIR:-}" ]; then GIT_DIR=$(git rev-parse --absolute-git-dir) && export GIT_DIR; fi
+if [ -n "$top" ]; then
+  if [ -n "${GIT_WORK_TREE:-}" ]; then export GIT_WORK_TREE=$top; fi
+  cd "$top"
+fi
+
+# Trees are exported through an empty repository that borrows this one's
+# objects, so no attributes file, filter or configuration outside the
+# tree changes what an export holds.
+clean="$work/clean.git"
+env -u GIT_DIR -u GIT_WORK_TREE -u GIT_COMMON_DIR git init -q --bare --template= "$clean"
+mkdir -p "$clean/objects/info"
+git rev-parse --path-format=absolute --git-path objects >"$clean/objects/info/alternates"
+export_tree() {
+  env -u GIT_WORK_TREE -u GIT_COMMON_DIR -u GIT_CONFIG_PARAMETERS -u GIT_CONFIG_COUNT \
+    GIT_DIR="$clean" GIT_ATTR_NOSYSTEM=1 GIT_CONFIG_NOSYSTEM=1 GIT_CONFIG_GLOBAL=/dev/null \
+    git -c core.attributesFile=/dev/null archive --format=tar "$1"
+}
+
+# matching <file>: the line numbers of the patterns matching <file>.
+matching() {
+  local i
+  for i in "${!patterns[@]}"; do
+    if grep -qaiE -e "${patterns[$i]}" "$1"; then echo "${plines[$i]}"; fi
+  done
+}
+
+# shown <path>: the path, or "a withheld path" when a pattern matches it.
+shown() {
+  local i
+  for i in "${!patterns[@]}"; do
+    if printf '%s\n' "$1" | grep -qiE -e "${patterns[$i]}"; then echo "a withheld path"; return; fi
+  done
+  printf '%s\n' "$1"
+}
+
+# --- gitleaks ------------------------------------------------------------
+want=${GELLEE_GITLEAKS_VERSION:-$(git show "$anchor:mise.toml" 2>/dev/null |
+  sed -n 's/^"aqua:gitleaks\/gitleaks" = "\(.*\)"$/\1/p' || true)}
+[ -n "$want" ] || die "gitleaks: no version pinned"
+command -v gitleaks >/dev/null || die "gitleaks: not installed"
+have=$(gitleaks version 2>/dev/null || true)
+[ "${have#v}" = "${want#v}" ] || die "gitleaks: version $have, want $want"
+
+# --- Root guard ----------------------------------------------------------
+root=${GELLEE_PUBLIC_ROOT:-$(git show "$anchor:ci/public-root" 2>/dev/null | tr -d '[:space:]' || true)}
+[[ $root =~ ^[0-9a-f]{40}$ ]] || die "root guard: no public root recorded"
+for t in "${tips[@]}"; do
+  roots=$(git rev-list --max-parents=0 "$t")
+  [ "$roots" = "$root" ] || fail "root guard: $t does not descend from the public root alone"
+done
+
+# --- Metadata and per-commit deny-list -----------------------------------
+is_maintainer() { local m; for m in "${maintainers[@]}"; do [ "${1,,}" = "${m,,}" ] && return 0; done; return 1; }
+for c in "${commits[@]}"; do
+  IFS=$'\x1f' read -r an ae adate _ ce cdate <<<"$(git log -1 --format='%an%x1f%ae%x1f%ai%x1f%cn%x1f%ce%x1f%ci' "$c")"
+  sob=$(git log -1 --format='%(trailers:key=Signed-off-by,valueonly,separator=%x0a)' "$c")
+  grep -qxF -- "$an <$ae>" <<<"$sob" || fail "metadata: commit $c has no Signed-off-by matching its author"
+  if [ "$ce" != "$ae" ] && ! is_maintainer "$ce" && [ "$ce" != "$github_committer" ]; then
+    fail "metadata: commit $c has a committer who is neither its author, a maintainer nor GitHub"
+  fi
+  if is_maintainer "$ae"; then
+    [[ $adate == *' +0000' ]] || fail "metadata: commit $c has an author date outside UTC"
+  fi
+  if is_maintainer "$ce"; then
+    [[ $cdate == *' +0000' ]] || fail "metadata: commit $c has a committer date outside UTC"
+  fi
+
+  git log -1 --format='%an <%ae>%n%cn <%ce>%n%B' "$c" >"$work/meta"
+  git -c core.quotePath=false show --format= --no-color --no-ext-diff --no-textconv --text \
+    --no-relative --src-prefix=a/ --dst-prefix=b/ \
+    --unified=0 --diff-merges=first-parent --output-indicator-new='>' "$c" |
+    awk '/^\+\+\+ / { path = substr($0, 7); next }
+         /^rename to / { print substr($0, 11) "\t"; next }
+         /^>/ { print path "\t" substr($0, 2) }' >"$work/added"
+  git -c core.quotePath=false diff-tree -r --root --no-commit-id --name-only \
+    --no-renames --no-relative --diff-merges=first-parent "$c" >"$work/cpaths"
+  if grep -qF -- "$allow_marker" "$work/added"; then
+    fail "gitleaks: an allow marker in $(shown "$(grep -F -- "$allow_marker" "$work/added" | head -1 | cut -f1)") at commit $c"
+  fi
+  for n in $(matching "$work/meta"); do fail "deny-list: message or identity of commit $c matches pattern on line $n"; done
+  for n in $(matching "$work/cpaths"); do fail "deny-list: path in commit $c matches pattern on line $n"; done
+  for i in "${!patterns[@]}"; do
+    grep -aiE -e "${patterns[$i]}" "$work/added" | cut -f1 | sort -u >"$work/hits" || true
+    while IFS= read -r p; do
+      fail "deny-list: added line in $(shown "$p") at commit $c matches pattern on line ${plines[$i]}"
+    done <"$work/hits"
+  done
+done
+
+# --- Ref names and tag messages ------------------------------------------
+if [ ${#refs[@]} -gt 0 ]; then
+  printf '%s\n' "${refs[@]}" >"$work/refs"
+  for n in $(matching "$work/refs"); do fail "deny-list: ref name matches pattern on line $n"; done
+fi
+for tg in "${tagobjs[@]}"; do
+  git cat-file -p "$tg" >"$work/tag"
+  tagger=$(sed -n '/^$/q;s/^tagger .* <\(.*\)> [0-9]* \([-+][0-9]*\)$/\1 \2/p' "$work/tag")
+  if [ -n "$tagger" ] && is_maintainer "${tagger% *}" && [ "${tagger##* }" != +0000 ]; then
+    fail "metadata: tag $(git rev-parse "$tg") has a tagger date outside UTC"
+  fi
+  for n in $(matching "$work/tag"); do fail "deny-list: tag message matches pattern on line $n"; done
+done
+
+# --- Trees ---------------------------------------------------------------
+files=0
+mapfile -t utips < <(printf '%s\n' "${tips[@]}" | sort -u)
+for t in "${utips[@]}"; do
+  tree="$work/tree"
+  rm -rf "$tree" && mkdir "$tree"
+  if git grep -q -e export-ignore -e export-subst "$t" -- .gitattributes '*/.gitattributes' 2>/dev/null; then
+    fail "tree: .gitattributes changes what an export holds at $t"
+  fi
+  # Errors from git and tar can name a path, so they are not shown.
+  export_tree "$t" 2>/dev/null | tar -x -C "$tree" 2>/dev/null || die "tree: cannot export $t"
+  # Every regular file must hash to its blob: the tree's own attributes
+  # (eol, working-tree-encoding, ident) can rewrite what an export holds.
+  : >"$work/want" && : >"$work/fpaths" && : >"$work/allpaths"
+  while IFS= read -r -d '' entry; do
+    printf '%s\0' "${entry#*$'\t'}" >>"$work/allpaths"
+    case $entry in 100644\ *|100755\ *) ;; *) continue ;; esac
+    oid=${entry#* * } && oid=${oid%%$'\t'*}
+    printf '%s\n' "$oid" >>"$work/want"
+    printf '%s\0' "${entry#*$'\t'}" >>"$work/fpaths"
+  done < <(git ls-tree -r -z "$t")
+  # A path listed twice is overwritten on export, so its first entry
+  # is never scanned.
+  dups=$(LC_ALL=C sort -z "$work/allpaths" | LC_ALL=C uniq -dz | tr -cd '\0' | wc -c)
+  [ "$dups" -eq 0 ] || fail "tree: $dups paths appear more than once at $t"
+  rc=0
+  (cd "$tree" && env -u GIT_WORK_TREE -u GIT_COMMON_DIR GIT_DIR="$clean" \
+    xargs -0 -r git hash-object --no-filters -- \
+    <"$work/fpaths" >"$work/have" 2>/dev/null) || rc=$?
+  [ "$rc" -eq 0 ] || die "tree: cannot hash the export of $t"
+  cmp -s "$work/want" "$work/have" || fail "tree: the export of $t differs from its objects"
+  count=$(git ls-tree -r --name-only "$t" | wc -l)
+  [ "$count" -gt 0 ] || { fail "tree: no files at $t"; continue; }
+  files=$((files + count))
+  for g in .gitleaks.toml .gitleaksignore; do
+    if git cat-file -e "$t:$g" 2>/dev/null; then fail "gitleaks: the tree holds $g at $t"; fi
+  done
+  git ls-tree -r --name-only "$t" >"$work/paths"
+  (cd "$tree" && find . -type l -printf '%p\t%l\n') >>"$work/paths"
+  for n in $(matching "$work/paths"); do fail "deny-list: a path at $t matches pattern on line $n"; done
+  for i in "${!patterns[@]}"; do
+    (cd "$tree" && grep -rlaiE -e "${patterns[$i]}" . || true) | sed 's|^\./||' >"$work/hits"
+    while IFS= read -r p; do
+      fail "deny-list: tree file $(shown "$p") at $t matches pattern on line ${plines[$i]}"
+    done <"$work/hits"
+  done
+  if (cd "$tree" && grep -rqaF -- "$allow_marker" .); then
+    fail "gitleaks: an allow marker in the tree at $t"
+  fi
+  rc=0
+  gitleaks dir --no-banner --config "$work/gitleaks.toml" --gitleaks-ignore-path "$work/noignore" --redact --exit-code 0 --report-format json \
+    --report-path "$work/dir.json" "$tree" >/dev/null 2>&1 || rc=$?
+  if [ "$rc" -eq 0 ]; then
+    jq -e 'type == "array"' "$work/dir.json" >/dev/null || die "gitleaks: the tree scan did not complete"
+  else
+    die "gitleaks: the tree scan did not complete"
+  fi
+  while IFS=$'\t' read -r rule path; do
+    fail "gitleaks: rule $rule in tree file $(shown "${path#"$tree"/}") at $t"
+  done < <(jq -r '.[] | [.RuleID, .File] | @tsv' "$work/dir.json")
+done
+
+# --- gitleaks over the history -------------------------------------------
+if [ ${#commits[@]} -gt 0 ]; then
+  gitdir=$(git rev-parse --absolute-git-dir)
+  if [ -e "$gitdir/.gitleaksignore" ]; then
+    fail "gitleaks: the git directory holds .gitleaksignore"
+  fi
+  rc=0
+  gitleaks git --no-banner --config "$work/gitleaks.toml" --gitleaks-ignore-path "$work/noignore" --redact --exit-code 0 --report-format json \
+    --report-path "$work/git.json" --log-opts="${logopts[*]}" \
+    "$gitdir" >/dev/null 2>&1 || rc=$?
+  if [ "$rc" -eq 0 ]; then
+    jq -e 'type == "array"' "$work/git.json" >/dev/null || die "gitleaks: the history scan did not complete"
+  else
+    die "gitleaks: the history scan did not complete"
+  fi
+  while IFS=$'\t' read -r rule path commit; do
+    fail "gitleaks: rule $rule in $(shown "$path") at commit $commit"
+  done < <(jq -r '.[] | [.RuleID, .File, .Commit] | @tsv' "$work/git.json")
+fi
+
+say "${#commits[@]} commits, ${#patterns[@]} patterns, $files files"
+if [ "$without" = 1 ]; then
+  die "deny-list unavailable for pull requests from forks: a maintainer re-pushes the commits as a branch of this repository"
+fi
+[ "$failures" -eq 0 ] || exit 1

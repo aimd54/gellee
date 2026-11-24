@@ -1,0 +1,29 @@
+{
+  "collected": "2026-11-11T10:00:00+01:00",
+  "projects": {
+    "alpha/fern": {
+      "branch": "m2-task-17",
+      "head": "abc1234",
+      "last_commit": "2026-11-10T09:00:00+01:00",
+      "remote": true,
+      "ahead": 2,
+      "dirty": 0
+    },
+    "alpha/renamed": {
+      "branch": "main",
+      "head": "def5678",
+      "last_commit": "2026-11-10T18:00:00+01:00",
+      "remote": false,
+      "ahead": 5,
+      "dirty": 0
+    },
+    "beta/tool": {
+      "branch": "main",
+      "head": "0a1b2c3",
+      "last_commit": "2026-11-11T08:00:00+01:00",
+      "remote": true,
+      "ahead": 0,
+      "dirty": 3
+    }
+  }
+}

@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Runs the publication gate on every branch and tag pushed to the public
+# repository, the remote whose URL is the module path in go.mod. Pushes
+# to other remotes pass unchecked.
+set -euo pipefail
+
+remote=$1 url=$2
+here=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+module=
+if [ -r "$here/../go.mod" ]; then
+  module=$(tr -d '\r' <"$here/../go.mod" |
+    sed -n 's|^module[[:space:]][[:space:]]*\([^[:space:]]*\).*|\1|p' | head -n 1)
+fi
+module=${module//\"/}
+if [[ $module != */*/* ]]; then
+  echo "pre-push: go.mod has no usable module line (host/owner/repo)" >&2
+  exit 1
+fi
+want=${module#*/}
+want=${want,,}
+
+# The URL as git resolved it, reduced to its path: lowercase, without scheme,
+# user, host, port, trailing slash or .git. Any host qualifies, so a mirror
+# or an ssh alias of the public repository is gated too.
+path=${url,,}
+if [[ $path == *://* ]]; then
+  path=${path#*://}
+  path=${path#*/}
+else
+  path=${path#*:}
+fi
+path=${path%/}
+path=${path%.git}
+path=${path%/}
+case "/$path" in
+  */"$want") ;;
+  *) exit 0 ;;
+esac
+
+status=0
+while read -r _ lsha rref rsha; do
+  [[ $lsha =~ ^0+$ ]] && continue
+  if [[ $rsha =~ ^0+$ ]]; then
+    "$here/public-gate" --ref "$rref" "$lsha" "--remotes=$remote" || status=1
+  else
+    "$here/public-gate" --ref "$rref" "$lsha" "$rsha" || status=1
+  fi
+done
+exit "$status"

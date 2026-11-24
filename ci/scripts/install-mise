@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Installs one fixed release of mise, checked against its published
+# digest, and puts it and its shims on the path of the steps that follow.
+# The tools themselves are the ones pinned in mise.toml and mise.lock.
+set -euo pipefail
+
+version=2026.11.5
+case "$(uname -m)" in
+  x86_64) arch=x64 sum=7a5b051d6f17d335c502f8047a5175cf3103f347d91942771c60da4e302ebcb0 ;;
+  aarch64) arch=arm64 sum=3cb907fc1d3f033afab40b4a8efca4fd71440bf91b63bfca3beb3302b0f3a6d5 ;;
+  *) echo "no mise release is pinned for $(uname -m)" >&2; exit 1 ;;
+esac
+
+dir="$HOME/.local/bin"
+mkdir -p "$dir"
+curl -fsSL -o "$dir/mise" "https://github.com/jdx/mise/releases/download/v$version/mise-v$version-linux-$arch"
+echo "$sum  $dir/mise" | sha256sum -c -
+chmod +x "$dir/mise"
+"$dir/mise" --version
+
+if [ -n "${GITHUB_PATH:-}" ]; then
+  echo "$dir" >> "$GITHUB_PATH"
+fi

@@ -1,0 +1,25 @@
+# Editor and OS noise
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Claude Code local settings
+.claude/settings.local.json*
+
+# Local files
+*.private.*
+
+# Tool state written by mise. The locks under it are part of mise.lock,
+# which names them by path and digest, so they are tracked.
+/.mise/*
+!/.mise/locks/
+
+# Build output
+/bin/gellee
+/web/node_modules/
+/web/dist/*
+!/web/dist/.keep
+/web/test-results/
+/web/playwright-report/

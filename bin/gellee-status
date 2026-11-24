@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Print a table of every project: group, project, state, last update and
+# next action.
+set -euo pipefail
+
+# shellcheck source=../lib/gellee.sh
+. "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/../lib/gellee.sh"
+
+gellee_load_config
+rows=""
+active=0
+
+while IFS= read -r file; do
+  key=${file#"$GELLEE_STATE"/}
+  key=${key%.md}
+  group=$(gellee_fm "$file" group)
+  state=$(gellee_fm "$file" state)
+  updated=$(gellee_fm "$file" updated)
+  next=$(gellee_next_action "$file")
+  if ! gellee_valid "$file"; then
+    state=invalid
+  else
+    if [ "$state" = active ]; then
+      active=$((active + 1))
+    fi
+    if [ ! -d "$GELLEE_PROJECTS_ROOT/$key" ]; then
+      state=missing
+    else
+      last=$(gellee_last_commit "$GELLEE_PROJECTS_ROOT/$key")
+      if [ -n "$last" ] && [[ "$updated" < "$last" ]]; then
+        updated="$updated (stale)"
+      fi
+    fi
+  fi
+  rows+="${group:--}"$'\t'"$key"$'\t'"$state"$'\t'"${updated:--}"
+  rows+=$'\t'"${next:-(no handoff yet)}"$'\n'
+done < <(gellee_status_files)
+
+{
+  printf 'GROUP\tPROJECT\tSTATE\tUPDATED\tNEXT ACTION\n'
+  printf '%s' "$rows" | LC_ALL=C sort -t$'\t' -k1,1 -k2,2
+} | column -t -s$'\t'
+printf '\nactive: %d (limit %d)\n' "$active" "$GELLEE_LIMIT"
