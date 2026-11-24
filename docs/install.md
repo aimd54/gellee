@@ -18,14 +18,15 @@ whose remote carries them from one machine to the next.
 
 Every machine keeps its projects under one projects root, in one
 directory per root named in the configuration, with each project
-directly beneath:
+directly beneath. The root names are yours to choose, such as one per
+forge or per kind of work:
 
 ```text
 ~/projects/                  GELLEE_PROJECTS_ROOT
-├── public-github/           a root named in config
-│   ├── webapp/              project public-github/webapp
+├── oss/                     a root named in config
+│   ├── webapp/              project oss/webapp
 │   └── gellee/
-└── public-gitlab/
+└── work/
     └── tooling/
 ~/state/                     GELLEE_STATE, outside the roots
 ```
@@ -45,7 +46,7 @@ remote and push it:
 
 ```bash
 mkdir -p ~/state && cd ~/state && git init
-printf 'roots=public-github public-gitlab\nlimit=3\nactive_days=10\n' > config
+printf 'roots=oss work\nlimit=3\nactive_days=10\n' > config
 git add config && git commit -s -m "chore: add the configuration"
 git remote add origin git@git.internal:you/state.git
 git push -u origin main
@@ -63,8 +64,8 @@ git clone git@git.internal:you/state.git ~/state
    put it on your `PATH` with the skills:
 
    ```bash
-   git clone https://github.com/aimd54/gellee.git ~/projects/public-github/gellee
-   cd ~/projects/public-github/gellee
+   git clone https://github.com/aimd54/gellee.git ~/projects/oss/gellee
+   cd ~/projects/oss/gellee
    mise trust && mise install
    mise exec -- make build
    mkdir -p ~/.local/bin ~/.claude/skills
@@ -146,7 +147,7 @@ port 8080; see [the dashboard guide](dashboard.md).
 ## Checking a machine
 
 ```bash
-cd ~/projects/public-github/gellee && gellee-path
+cd ~/projects/oss/gellee && gellee-path
 gellee-status
 gellee collect --no-commit
 git -C "$GELLEE_STATE" status -s
@@ -275,7 +276,7 @@ then commit and push the state repository.
 ## Moving a project to another root
 
 A project's key is its path under the projects root, so moving it from
-one root to another, for instance from `public-gitlab` to a root for a
+one root to another, for instance from `oss` to a root for a
 private forge, changes its key from `old` to `new`:
 
 1. In the state repository, `git mv` the status file to `new`'s path,
