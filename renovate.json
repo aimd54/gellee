@@ -98,6 +98,13 @@
         "renovatebot/github-action"
       ],
       "groupName": "renovate"
+    },
+    {
+      "description": "Every update is a build change, whatever type the presets give its kind of dependency",
+      "matchPackageNames": [
+        "*"
+      ],
+      "semanticCommitType": "build"
     }
   ]
 }
