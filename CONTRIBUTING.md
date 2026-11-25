@@ -15,8 +15,9 @@ history. The full text is at <https://developercertificate.org/>.
 
 Commit subjects follow [Conventional Commits](https://www.conventionalcommits.org/),
 for example `fix(collect): skip empty transcripts` or
-`docs: describe the memory store`. History is linear and pull requests
-are merged by rebase, so each commit stands on its own: it builds, its
+`docs: describe the memory store`. History is linear: a maintainer
+rebases a pull request onto `main` and moves `main` forward to it, so
+each commit lands as written and stands on its own: it builds, its
 tests pass, and its message says what changed and why.
 
 ## Checks

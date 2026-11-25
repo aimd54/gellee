@@ -4,6 +4,18 @@
 | --- | --- |
 | aimd54 | [@aimd54](https://github.com/aimd54) |
 
+## Merging
+
+The merge button on GitHub rewrites each commit with the merging
+account as committer and a date in that account's time zone, which the
+gate rejects for a maintainer. Merge from a clone instead:
+
+1. Rebase the branch onto `main` under `TZ=UTC` and push it through the
+   pre-push hook with `--force-with-lease`, if it is behind `main`.
+2. Wait until every check has passed on that exact commit.
+3. Move `main` forward to it: `git push origin <branch>:main`. GitHub
+   marks the pull request merged and deletes the branch.
+
 ## Pull requests from forks
 
 Never merge a pull request from a fork as it is. A fork controls its own

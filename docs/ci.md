@@ -94,7 +94,10 @@ runs four checks:
 - Metadata: every commit has a `Signed-off-by` trailer that matches its
   author, a committer that is the author, a maintainer or GitHub, and a
   UTC date when a maintainer wrote or committed it. An annotated tag
-  that a maintainer created needs a UTC tagger date too.
+  that a maintainer created needs a UTC tagger date too. The merge
+  button on GitHub writes the committer date in the merging account's
+  time zone, so pull requests are merged by a fast-forward push from a
+  clone, as `MAINTAINERS.md` describes.
 - Deny-list: a file of patterns that no commit message, identity, added
   line, path touched by a commit, file in the tree, ref name or tag
   message may match.
