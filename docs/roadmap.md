@@ -10,7 +10,7 @@ after it.
 | Status convention | Done |
 | Dashboard | First slice and workers done |
 | Continuity between machines | Memories and private files done; skills and settings not started |
-| Publication | Preparation in progress |
+| Publication | Public repository and deployment repository done; demo mode not started |
 | Idea notebook and articles | Not started |
 
 ## Status convention
@@ -122,9 +122,10 @@ the published project as a dependency. Each part gets a design before
 code.
 
 - The public repository holds the binary, the web interface, the skills
-  and the scripts, with their documentation and workflows. This
-  repository becomes it; its history is written for publication.
-- The deployment repository holds only what one installation needs.
+  and the scripts, with their documentation and workflows. Done: it is
+  public, released as signed images on `ghcr.io`, from `v0.1.0`.
+- The deployment repository holds only what one installation needs,
+  and scans the public repository daily with its deny-list. Done.
 - The demo mode serves invented data read-only, such as the test
   fixtures, so the dashboard can be shown without a state repository.
 - Publication gate, small gaps left: the `--no-relative` options have no
@@ -146,8 +147,8 @@ helps with ideas, structure and the site, and does not write the text.
 
 ## Order
 
-Publication comes next: the public repository and the deployment
-repository first, then the demo mode. User-level skills and settings
+Publication comes next: the demo mode, the public repository and the
+deployment repository being done. User-level skills and settings
 follow. The notebook waits until ideas have accumulated in the status
 files.
 
