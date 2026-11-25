@@ -159,7 +159,10 @@ A release is a tag `vX.Y.Z` on a commit of `main`, following
 
 1. Required checks: the tag is on `main` and the four workflows named
    above succeeded for it.
-2. Image: builds the `Dockerfile` for `linux/amd64` and `linux/arm64`
+2. Image: waits for a maintainer to approve the `release` environment
+   on GitHub. The environment admits only `v*` tags and names the
+   maintainers as required reviewers, so a tag alone publishes nothing.
+   Then it builds the `Dockerfile` for `linux/amd64` and `linux/arm64`
    with QEMU and buildx, from the tagged tree alone and without a build
    cache, and pushes `ghcr.io/aimd54/gellee:vX.Y.Z`. The build attaches
    an SBOM and maximum-detail provenance, and sets the OCI labels for

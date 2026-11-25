@@ -37,9 +37,12 @@ jobs:
             --jq '.workflow_runs[]' > "$RUNNER_TEMP/runs.json"
           ci/scripts/require-runs ci.yml docs.yml codeql.yml gate.yml < "$RUNNER_TEMP/runs.json"
 
+  # Waits for a reviewer of the release environment before anything is
+  # built, pushed or signed; the GitHub release job runs after it.
   image:
     name: Image
     needs: checks
+    environment: release
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     permissions:
