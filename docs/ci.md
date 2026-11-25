@@ -16,6 +16,7 @@ commit.
 | `scorecard.yml` | every push to `main`, every Tuesday, a change to the branch protection rules | Scorecard analysis |
 | `gate.yml` | every push to `main`, every pull request, every tag `v*` | Publication gate |
 | `release.yml` | every tag `v*` | Required checks, Image, GitHub release |
+| `renovate.yml` | every day at 05:23 UTC, by hand | Renovate |
 
 | Job | Runs |
 | --- | --- |
@@ -28,6 +29,7 @@ commit.
 | Analyze Go, Analyze JavaScript | CodeQL, with a manual `go build ./...` for Go |
 | Scorecard analysis | the OpenSSF Scorecard action, publishing its results and uploading them as code scanning results |
 | Publication gate | `ci/public-gate`, described below |
+| Renovate | the Renovate action over this repository, described under Dependency updates |
 
 `make check` runs the gates of the Lint, Test and Interface jobs in one
 command, and builds the interface. It does not run `make vuln`, the
@@ -174,14 +176,21 @@ signature.
 
 ## Dependency updates
 
-Renovate proposes updates through its GitHub app, with the
-`config:best-practices` preset and the schedule in `renovate.json`.
+Renovate proposes updates from `.github/workflows/renovate.yml`, run
+daily and by hand, with the `config:best-practices` preset and the
+schedule in `renovate.json`
+([0010](adr/0010-run-renovate-from-a-workflow.md)). It acts with the
+`RENOVATE_TOKEN` secret, a fine-grained token limited to this
+repository with read and write access to contents, pull requests,
+issues and workflows, and read access to Dependabot alerts. Its commits
+are signed off by `Renovate Bot`, so they pass the publication gate.
 Two custom managers read what the presets do not: the
 `PLAYWRIGHT_IMAGE` line of the `Makefile`, and the pinned `govulncheck`
 version in it. Package rules group the updates that must move together:
 Playwright's image and library, the Go toolchain, Node, and the minor
-and patch updates of the interface's development tools. mise itself
-updates once a month.
+and patch updates of the interface's development tools, and the
+Renovate action with the image it runs. mise itself updates once a
+month.
 
 ## Changing a pin by hand
 

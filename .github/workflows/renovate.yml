@@ -1,0 +1,40 @@
+# Copyright The gellee Authors
+# SPDX-License-Identifier: Apache-2.0
+
+name: Renovate
+
+on:
+  schedule:
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: renovate
+  cancel-in-progress: false
+
+# Runs Renovate over this repository alone, with the RENOVATE_TOKEN
+# secret: a fine-grained token limited to this repository. The schedules
+# in renovate.json decide when update branches are opened; each daily
+# run also rebases open pull requests and raises vulnerability fixes.
+# Forks have no secret and skip the job.
+
+jobs:
+  renovate:
+    name: Renovate
+    if: github.repository == 'aimd54/gellee'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: renovatebot/github-action@ebcbb513d07ead4d9c0c2139064301db05e84a3e # v46.3.15
+        with:
+          token: ${{ secrets.RENOVATE_TOKEN }}
+          renovate-image: ghcr.io/renovatebot/renovate:44.263.3@sha256:7866a93dda59fff4f7d6ab500e1fdf9fe426f136e458fa2d123f0f2236c7c629
+        env:
+          RENOVATE_REPOSITORIES: ${{ github.repository }}
+          RENOVATE_ONBOARDING: 'false'
+          RENOVATE_REQUIRE_CONFIG: required
+          RENOVATE_GIT_AUTHOR: 'Renovate Bot <renovate@whitesourcesoftware.com>'

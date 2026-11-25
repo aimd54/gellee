@@ -20,3 +20,4 @@ shows where each decision applies.
 | [0007](0007-report-workers-through-the-collector.md) | Report workers through the collector | Accepted |
 | [0008](0008-private-files-in-the-state-repository.md) | Keep private files in the state repository, linked into checkouts | Accepted |
 | [0009](0009-public-code-private-deployment.md) | Publish the code, keep each installation private | Accepted |
+| [0010](0010-run-renovate-from-a-workflow.md) | Run Renovate from a workflow in the repository | Accepted |

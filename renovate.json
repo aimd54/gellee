@@ -90,6 +90,14 @@
         "patch"
       ],
       "groupName": "interface development tools"
+    },
+    {
+      "description": "The Renovate action and the image it runs arrive as one change",
+      "matchPackageNames": [
+        "ghcr.io/renovatebot/renovate",
+        "renovatebot/github-action"
+      ],
+      "groupName": "renovate"
     }
   ]
 }
