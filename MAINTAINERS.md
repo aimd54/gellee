@@ -10,8 +10,13 @@ The merge button on GitHub rewrites each commit with the merging
 account as committer and a date in that account's time zone, which the
 gate rejects for a maintainer. Merge from a clone instead:
 
-1. Rebase the branch onto `main` under `TZ=UTC` and push it through the
-   pre-push hook with `--force-with-lease`, if it is behind `main`.
+1. Rebase the branch onto `main` under `TZ=UTC` with
+   `git rebase --force-rebase main`, which rewrites every commit with
+   the maintainer as committer and the maintainer's signature, then push
+   it through the pre-push hook with `--force-with-lease`. A branch whose
+   commits are all the maintainer's own, signed and on top of `main`,
+   needs no rebase. Each commit on `main` is then signed by the
+   maintainer who merged it; its author and sign-off stay unchanged.
 2. Wait until every check has passed on that exact commit.
 3. Move `main` forward to it: `git push origin <branch>:main`. GitHub
    marks the pull request merged and deletes the branch.
