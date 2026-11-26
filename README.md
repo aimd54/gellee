@@ -8,8 +8,16 @@ machines, and private files kept out of every repository.
 
 ## Try it
 
-`gellee serve --demo` serves the dashboard over invented projects, with
-no state repository; see [the dashboard guide](docs/dashboard.md#demo).
+Run the released image over invented projects, with no state
+repository:
+
+```bash
+docker run --rm -p 8080:8080 ghcr.io/aimd54/gellee:vX.Y.Z --demo
+```
+
+and open <http://127.0.0.1:8080>. The tag must be a release that
+includes `--demo`. From a built checkout, `gellee serve --demo` does the
+same; see [the dashboard guide](docs/dashboard.md#demo).
 
 ## Install
 

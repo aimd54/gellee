@@ -99,10 +99,12 @@ Open <http://127.0.0.1:8080>.
 | `--state` | State repository checkout | `GELLEE_STATE` |
 | `--listen` | Address | `127.0.0.1:8080` |
 | `--refresh` | How long files are served before being read again | `1m` |
+| `--demo` | Serve invented data from a temporary directory, ignoring `--state` | off |
 
-The server reads files and writes nothing. It has no authentication of
-its own: it listens on loopback unless told otherwise, and on a server
-it belongs behind a reverse proxy that authenticates.
+Outside the demo, the server reads files and writes nothing. It has no
+authentication of its own: it listens on loopback unless told
+otherwise, and on a server it belongs behind a reverse proxy that
+authenticates.
 
 ### On a server
 
@@ -154,6 +156,11 @@ and removed when it stops; `--state` and `GELLEE_STATE` are ignored.
 Every date is placed relative to the start, or to `--today` when it is
 given, so the same `--today` always shows the same pages. A badge in
 the rail says the data is invented.
+
+The demo writes to a temporary directory, so with `--read-only` the
+container needs a writable `/tmp` (`--tmpfs /tmp`). Without `--today`,
+the dates stay where they were written at start, so after about two
+hours the machines read as not reporting.
 
 | Project | State | What it shows |
 | --- | --- | --- |

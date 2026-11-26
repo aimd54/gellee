@@ -79,6 +79,7 @@ write path and holds no data of its own.
 | --- | --- |
 | `cmd/gellee/` | Entry point and the four commands |
 | `internal/collect/` | Summaries of transcripts and working trees, and the machine file |
+| `internal/demo/` | The invented state repository for `serve --demo` and the browser tests |
 | `internal/gitfacts/` | State of working trees, read with the `git` command |
 | `internal/memories/` | Memory sync: adopt, sync, list, notices and health |
 | `internal/private/` | Private files: link, sweep and status |

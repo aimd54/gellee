@@ -126,9 +126,8 @@ code.
   public, released as signed images on `ghcr.io`, from `v0.1.0`.
 - The deployment repository holds only what one installation needs,
   and scans the public repository daily with its deny-list. Done.
-- The demo mode serves invented data read-only, such as the test
-  fixtures, so the dashboard can be shown without a state repository.
-  Done: `gellee serve --demo`.
+- The demo mode serves an invented dataset read-only, so the dashboard
+  can be shown without a state repository. Done: `gellee serve --demo`.
 - Publication gate, small gaps left: the `--no-relative` options have no
   test of their own; committer and sign-off addresses are compared
   case-sensitively; repositories in the SHA-256 object format are
