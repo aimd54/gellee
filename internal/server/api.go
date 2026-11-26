@@ -23,6 +23,10 @@ type Server struct {
 	now      func() time.Time
 	refresh  time.Duration
 
+	// Demo marks the overview and health answers, for a server over the
+	// invented state of internal/demo.
+	Demo bool
+
 	mu   sync.Mutex
 	snap Snapshot
 	has  bool
@@ -63,7 +67,17 @@ func (s *Server) Handler() http.Handler {
 			writeJSON(w, code, body)
 		})
 	}
-	api("overview", overview)
+	// marked adds "demo": true to a map answer when the server is a demo.
+	marked := func(fn func(Snapshot, *http.Request) (any, int)) func(Snapshot, *http.Request) (any, int) {
+		return func(snap Snapshot, r *http.Request) (any, int) {
+			body, code := fn(snap, r)
+			if m, ok := body.(map[string]any); ok && s.Demo {
+				m["demo"] = true
+			}
+			return body, code
+		}
+	}
+	api("overview", marked(overview))
 	api("projects", func(snap Snapshot, _ *http.Request) (any, int) {
 		return map[string]any{"projects": snap.Projects()}, http.StatusOK
 	})
@@ -76,12 +90,12 @@ func (s *Server) Handler() http.Handler {
 			"workers": snap.Workers(), "problems": snap.Problems,
 		}, http.StatusOK
 	})
-	api("health", func(snap Snapshot, _ *http.Request) (any, int) {
+	api("health", marked(func(snap Snapshot, _ *http.Request) (any, int) {
 		return map[string]any{
 			"built": snap.Built.Format(time.RFC3339), "today": snap.Today,
 			"projects": len(snap.Statuses), "rows": len(snap.Rows), "problems": snap.Problems,
 		}, http.StatusOK
-	})
+	}))
 	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
 			writeJSON(w, http.StatusMethodNotAllowed, map[string]string{"error": "the API is read-only"})

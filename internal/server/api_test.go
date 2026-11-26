@@ -315,3 +315,22 @@ func TestProjectDetailAndOverviewCarryTheSessions(t *testing.T) {
 		t.Fatal("last_session must be present, as null")
 	}
 }
+
+func TestTheDemoIsMarkedOnlyWhenSet(t *testing.T) {
+	for _, demo := range []bool{false, true} {
+		s := New(fixtureState, ui, func() time.Time { return noon }, time.Minute)
+		s.Demo = demo
+		h := s.Handler()
+		for _, path := range []string{"/api/v1/overview", "/api/v1/health"} {
+			body, rec := get(t, h, path)
+			v, has := body["demo"]
+			if rec.Code != http.StatusOK || has != demo || (demo && v != true) {
+				t.Errorf("demo %v %s: code %d demo %v present %v", demo, path, rec.Code, v, has)
+			}
+		}
+		body, _ := get(t, h, "/api/v1/projects")
+		if _, has := body["demo"]; has {
+			t.Errorf("demo %v: /api/v1/projects carries demo", demo)
+		}
+	}
+}
