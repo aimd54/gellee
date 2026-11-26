@@ -1,0 +1,4 @@
+# Invented prices for the demo, per million tokens.
+# model         input  output  cache_write  cache_read
+model-large     10     50      12.5         1
+model-medium    3      15      3.75         0.3
