@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { useLayoutEffect, useRef } from 'react';
+import { useApi } from './api/useApi';
+import type { HealthData } from './api/types';
 import { Navigation } from './navigation';
 import { nameOf } from './project';
 import { useRoute, type Route } from './router';
@@ -21,6 +23,7 @@ function titleOf(route: Route): string {
 
 export function App() {
   const [route, go] = useRoute();
+  const health = useApi<HealthData>('/health');
   // A new view starts at its top: the key gives each one its own
   // scrolling element.
   const page = route.view === 'project' ? route.key : route.view;
@@ -42,7 +45,7 @@ export function App() {
   });
   return (
     <div className="gl-app">
-      <Rail current={route.view === 'project' ? 'projects' : route.view} go={go} />
+      <Rail current={route.view === 'project' ? 'projects' : route.view} go={go} demo={health.data?.demo === true} />
       <main className="gl-main" key={page} ref={main} tabIndex={-1}>
         <Navigation.Provider value={{ get moved() { return moved.current; } }}>
           {route.view === 'overview' && <Overview go={go} />}

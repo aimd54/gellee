@@ -55,6 +55,7 @@ export type OverviewData = {
   problems: Problem[];
   collected: string;
   week: Usage;
+  demo?: boolean;
 };
 
 export type ProjectsData = { projects: Project[] };
@@ -77,7 +78,7 @@ export type UsageData = {
 
 export type IdeasData = { ideas: { project: string; text: string }[] };
 
-export type HealthData = { today: string };
+export type HealthData = { today: string; demo?: boolean };
 
 export type Session = {
   id: string;

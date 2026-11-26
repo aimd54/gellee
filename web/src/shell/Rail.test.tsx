@@ -37,3 +37,12 @@ test('the theme switch names the theme it switches to', () => {
   expect(document.documentElement.dataset.theme).toBe('light');
   expect(screen.getByRole('button', { name: 'Dark theme' })).toHaveAttribute('title', 'Dark theme');
 });
+
+test('the rail shows the demo badge only for a demo', () => {
+  const { rerender } = render(<Rail current="overview" go={vi.fn()} />);
+  expect(screen.queryByRole('note')).toBeNull();
+  rerender(<Rail current="overview" go={vi.fn()} demo />);
+  const badge = screen.getByRole('note', { name: 'Demo: invented data' });
+  expect(badge).toHaveTextContent('demo');
+  expect(badge).toHaveAttribute('title', 'Demo: invented data');
+});

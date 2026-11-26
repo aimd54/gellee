@@ -17,7 +17,7 @@ const ITEMS = [
 
 export type Section = (typeof ITEMS)[number]['id'];
 
-export function Rail({ current, go }: { current: Section; go: Go }) {
+export function Rail({ current, go, demo = false }: { current: Section; go: Go; demo?: boolean }) {
   const [theme, setTheme] = useState(document.documentElement.dataset.theme ?? 'dark');
   const other = theme === 'dark' ? 'Light theme' : 'Dark theme';
   return (
@@ -25,6 +25,11 @@ export function Rail({ current, go }: { current: Section; go: Go }) {
       <span className="gl-rail-mark">
         <Mark />
       </span>
+      {demo && (
+        <span className="gl-rail-demo" role="note" aria-label="Demo: invented data" title="Demo: invented data">
+          demo
+        </span>
+      )}
       {ITEMS.map(({ path, label, id, Icon }) => (
         <Link key={id} to={path} go={go} aria-label={label} title={label} aria-current={current === id ? 'page' : undefined}>
           <Icon size={18} aria-hidden="true" />

@@ -68,3 +68,10 @@ test('a route change moves focus to the new heading and names the page', async (
   expect(ideas).toHaveFocus();
   expect(document.title).toBe('Ideas | gellee');
 });
+
+test('the rail shows the demo badge when the server says it is a demo', async () => {
+  stubApi({ '/api/v1/health': { today: '2026-11-11', demo: true }, '/api/v1/ideas': { ideas: [] } });
+  window.history.pushState({}, '', '/ideas');
+  render(<App />);
+  expect(await screen.findByRole('note', { name: 'Demo: invented data' })).toBeVisible();
+});
