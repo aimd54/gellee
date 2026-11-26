@@ -4,7 +4,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 // The built binary serves the fixture state directory with a fixed date,
-// so every figure on screen is known in advance.
+// so every figure on screen is known in advance, and the demo on a
+// second port with the same date.
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: false,
@@ -19,10 +20,18 @@ export default defineConfig({
     trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } }],
-  webServer: {
-    command: '../bin/gellee serve --state ../tests/fixtures/state --listen 127.0.0.1:8099 --today 2026-11-11',
-    url: 'http://127.0.0.1:8099/api/v1/health',
-    reuseExistingServer: false,
-    timeout: 20_000,
-  },
+  webServer: [
+    {
+      command: '../bin/gellee serve --state ../tests/fixtures/state --listen 127.0.0.1:8099 --today 2026-11-11',
+      url: 'http://127.0.0.1:8099/api/v1/health',
+      reuseExistingServer: false,
+      timeout: 20_000,
+    },
+    {
+      command: '../bin/gellee serve --demo --listen 127.0.0.1:8098 --today 2026-11-11',
+      url: 'http://127.0.0.1:8098/api/v1/health',
+      reuseExistingServer: false,
+      timeout: 20_000,
+    },
+  ],
 });
