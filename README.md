@@ -6,6 +6,11 @@ It provides a status file per project in a private state repository, a
 terminal listing, a read-only dashboard, a memory store carried between
 machines, and private files kept out of every repository.
 
+## Try it
+
+`gellee serve --demo` serves the dashboard over invented projects, with
+no state repository; see [the dashboard guide](docs/dashboard.md#demo).
+
 ## Install
 
 gellee is installed on every machine you work on, from a clone of this

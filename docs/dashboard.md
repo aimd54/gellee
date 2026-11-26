@@ -139,6 +139,36 @@ Keep the checkout current with a timer that runs
 `git -C /srv/gellee/state pull --ff-only`, or with a sync sidecar in a
 cluster. The dashboard picks up new files within the refresh interval.
 
+## Demo
+
+`gellee serve --demo` serves the dashboard over invented projects,
+without a state repository:
+
+```bash
+gellee serve --demo
+docker run --rm -p 8080:8080 ghcr.io/aimd54/gellee:vX.Y.Z --demo
+```
+
+The demo is written into a temporary directory when the server starts
+and removed when it stops; `--state` and `GELLEE_STATE` are ignored.
+Every date is placed relative to the start, or to `--today` when it is
+given, so the same `--today` always shows the same pages. A badge in
+the rail says the data is invented.
+
+| Project | State | What it shows |
+| --- | --- | --- |
+| `studio/loom` | active | The focus project: a session running, every section filled, usage written under its former name `studio/shuttle` |
+| `studio/loom-site` | active | A group shared with `studio/loom`; uncommitted work |
+| `studio/pathfinder` | active | A commit newer than its status |
+| `garden/seedbank` | active | Unpushed commits; the fourth active project against a limit of 3 |
+| `garden/trellis` | parked | A parked reason; usage on a model with no price |
+| `garden/almanac` | done | A finished project |
+| `studio/weft` | done | A project replaced by `studio/loom` |
+
+Of the three machines, `laptop` is current, `desktop` last reported
+three hours ago with an older Claude Code and two memory versions set
+aside, and `worker-1` has not pushed its memories for two days.
+
 ## Views
 
 | View | Shows |

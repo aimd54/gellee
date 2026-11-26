@@ -10,7 +10,7 @@ after it.
 | Status convention | Done |
 | Dashboard | First slice and workers done |
 | Continuity between machines | Memories and private files done; skills and settings not started |
-| Publication | Public repository and deployment repository done; demo mode not started |
+| Publication | Public repository, deployment repository and demo mode done |
 | Idea notebook and articles | Not started |
 
 ## Status convention
@@ -128,6 +128,7 @@ code.
   and scans the public repository daily with its deny-list. Done.
 - The demo mode serves invented data read-only, such as the test
   fixtures, so the dashboard can be shown without a state repository.
+  Done: `gellee serve --demo`.
 - Publication gate, small gaps left: the `--no-relative` options have no
   test of their own; committer and sign-off addresses are compared
   case-sensitively; repositories in the SHA-256 object format are
@@ -147,10 +148,9 @@ helps with ideas, structure and the site, and does not write the text.
 
 ## Order
 
-Publication comes next: the demo mode, the public repository and the
-deployment repository being done. User-level skills and settings
-follow. The notebook waits until ideas have accumulated in the status
-files.
+Publication is done apart from the publication gate's small gaps.
+User-level skills and settings follow. The notebook waits until ideas
+have accumulated in the status files.
 
 A standing constraint on all of it: the goal is less time spent keeping
 track, so each piece has to earn its place against the time it takes to
