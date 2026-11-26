@@ -20,6 +20,12 @@ One small status file per project in a private state repository, a
 a terminal listing. See [the user guide](status-convention.md) and
 [the decision](adr/0003-one-markdown-status-file-per-project.md).
 
+Not started:
+
+- Record the commit at `HEAD` in the status file at each handoff, so the
+  *Stale status* warning compares commits rather than times.
+- Warn when a session ends without a handoff.
+
 ## Dashboard
 
 A web view over what the status convention already records. It is built
