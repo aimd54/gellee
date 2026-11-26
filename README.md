@@ -30,8 +30,16 @@ Run the dashboard over invented projects, with no state repository:
 docker run --rm -p 8080:8080 ghcr.io/aimd54/gellee:v0.2.0 --demo
 ```
 
-and open <http://127.0.0.1:8080>. From a built checkout,
-`gellee serve --demo` does the same; see
+and open <http://127.0.0.1:8080>:
+
+![The dashboard overview over the demo projects: four active projects,
+each with where work stopped, the next action and the cost of the last
+seven days.](docs/assets/dashboard-light.png#gh-light-mode-only)
+![The dashboard overview over the demo projects: four active projects,
+each with where work stopped, the next action and the cost of the last
+seven days.](docs/assets/dashboard-dark.png#gh-dark-mode-only)
+
+From a built checkout, `gellee serve --demo` does the same; see
 [the dashboard guide](docs/dashboard.md#demo).
 
 ## Install

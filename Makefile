@@ -58,6 +58,11 @@ e2e-web: build ## Run the Playwright suite in its pinned image
 	docker run --rm --ipc=host --init -v "$(CURDIR)":/src -w /src/web -u "$$(id -u):$$(id -g)" -e HOME=/tmp \
 	  $(PLAYWRIGHT_IMAGE) npx playwright test $(E2E_ARGS)
 
+.PHONY: readme-shots
+readme-shots: build ## Capture the demo overview for the README into docs/assets
+	docker run --rm --ipc=host --init -v "$(CURDIR)":/src -w /src/web -u "$$(id -u):$$(id -g)" -e HOME=/tmp \
+	  $(PLAYWRIGHT_IMAGE) node scripts/readme-shots.mjs
+
 CI_IMAGE ?= gellee-ci
 
 .PHONY: ci-image

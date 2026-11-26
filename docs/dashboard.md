@@ -155,7 +155,8 @@ The demo is written into a temporary directory when the server starts
 and removed when it stops; `--state` and `GELLEE_STATE` are ignored.
 Every date is placed relative to the start, or to `--today` when it is
 given, so the same `--today` always shows the same pages. A badge in
-the rail says the data is invented.
+the rail says the data is invented. `make readme-shots` captures the
+demo overview in light and dark into `docs/assets` for the README.
 
 The demo writes to a temporary directory, so with `--read-only` the
 container needs a writable `/tmp` (`--tmpfs /tmp`). Without `--today`,
