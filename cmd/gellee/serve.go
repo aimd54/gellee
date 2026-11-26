@@ -41,6 +41,10 @@ func runServe(args []string, out, errw io.Writer) int {
 		fixed := day.Add(12 * time.Hour)
 		now = func() time.Time { return fixed }
 	}
+	// Registered before the demo is written, so a signal during startup
+	// only cancels ctx and the deferred removal still runs.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	dir, what := *stateDir, *stateDir
 	if *demoMode {
 		tmp, err := os.MkdirTemp("", "gellee-demo-")
@@ -71,8 +75,6 @@ func runServe(args []string, out, errw io.Writer) int {
 		Handler:           api.Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 	go func() {
 		<-ctx.Done()
 		_ = srv.Shutdown(context.Background())
