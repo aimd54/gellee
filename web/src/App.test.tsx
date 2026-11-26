@@ -51,6 +51,7 @@ test('a route change moves focus to the new heading and names the page', async (
   expect(document.title).toBe('Ideas | gellee');
   // The first load leaves focus alone.
   expect(first).not.toHaveFocus();
+  expect(screen.queryByRole('note')).toBeNull();
   expect(document.body).toHaveFocus();
 
   const fernFocus = focusOnArrival('fern');

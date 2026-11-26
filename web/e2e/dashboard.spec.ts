@@ -8,6 +8,7 @@ const rail = (page: Page) => page.getByRole('navigation', { name: 'Sections' });
 test('the overview leads with the bench, in handoff order', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Pick up the thread.');
+  await expect(page.getByRole('note', { name: 'Demo: invented data' })).toHaveCount(0);
   await expect(page.getByText('Wednesday, 11 November · collected 10:00')).toBeVisible();
   await expect(page.getByText('3 projects on the bench, the limit is 2.')).toBeVisible();
   await expect(page.getByText('1 over the limit')).toBeVisible();
