@@ -1,3 +1,6 @@
+<!-- markdownlint-disable MD033 MD041 -->
+<div align="center">
+
 # gellee
 
 **Every Claude Code session starts where the last one stopped, on any
@@ -5,6 +8,9 @@ machine, across all your projects.**
 
 [Try it](#try-it) | [Install](docs/install.md) |
 [Documentation](#documentation) | [Contributing](CONTRIBUTING.md)
+
+</div>
+<!-- markdownlint-enable MD033 MD041 -->
 
 ![On a laptop, a session runs /handoff and rewrites the status file of a
 project. The file goes through a private state repository in git. On a
