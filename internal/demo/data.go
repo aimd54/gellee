@@ -80,7 +80,7 @@ var machines = []machine{
 		},
 		trees: map[string]tree{
 			"studio/pathfinder": {"route-closures", "9a0b1c2", 20 * minute, 0, 0},
-			"garden/seedbank":   {"main", "8b14d07", 96 * hour, 0, 0},
+			"garden/seedbank":   {"main", "4e7a2c9", 6 * day, 0, 0},
 		},
 	},
 }
@@ -112,9 +112,8 @@ func ago(anchor time.Time, d time.Duration) string {
 	return anchor.Add(-d).Format(time.RFC3339)
 }
 
-// usage generates the rows of every profile, keyed by machine. The
-// random source has a fixed seed and is drawn the same way whatever the
-// anchor, so only the days move.
+// usage generates the rows of every profile, keyed by machine, from a
+// fixed seed drawn the same way whatever the anchor, so only the days move.
 func usage(anchor time.Time) map[string][]state.Row {
 	r := rand.New(rand.NewPCG(1, 2)) //nolint:gosec // invented data, not a secret
 	out := map[string][]state.Row{}
@@ -124,13 +123,13 @@ func usage(anchor time.Time) map[string][]state.Row {
 			if r.Float64() >= p.chance {
 				continue
 			}
-			day := anchor.AddDate(0, 0, -k).Format("2006-01-02")
+			date := anchor.AddDate(0, 0, -k).Format("2006-01-02")
 			for s := range 1 + r.IntN(3) {
 				id := fmt.Sprintf("%s-%s-%d-%d", p.machine, name, k, s)
 				for _, m := range p.models {
 					t := p.tokens/2 + r.Int64N(p.tokens)
 					out[p.machine] = append(out[p.machine], state.Row{
-						Day: day, Session: id, Project: p.project, Model: m,
+						Day: date, Session: id, Project: p.project, Model: m,
 						Input: t / 20, Output: t * 3 / 20, CacheWrite: t * 4 / 5, CacheRead: t * 12,
 						Messages: 4 + r.Int64N(30),
 					})
