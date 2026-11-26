@@ -1,58 +1,55 @@
 # gellee
 
-gellee keeps track of many projects developed mainly with Claude Code.
-It provides a status file per project in a private state repository, a
-`/handoff` skill that rewrites it, a session-start hook that shows it, a
-terminal listing, a read-only dashboard, a memory store carried between
-machines, and private files kept out of every repository.
+**Every Claude Code session starts where the last one stopped, on any
+machine, across all your projects.**
+
+[Try it](#try-it) | [Install](docs/install.md) |
+[Documentation](#documentation) | [Contributing](CONTRIBUTING.md)
+
+![On a laptop, a session runs /handoff and rewrites the status file of a
+project. The file goes through a private state repository in git. On a
+desktop, the next session opens with the project's state and its next
+action.](docs/assets/readme-hero.svg)
+
+## What you get
+
+- A status file per project: where work stopped, the next action, what
+  remains. The `/handoff` skill rewrites it at the end of a session.
+- A session-start hook that shows it to the next session, on whichever
+  machine that runs.
+- A terminal listing and a read-only dashboard across every project,
+  with usage and git facts.
+- Memories and private files carried between machines and kept out of
+  every project repository.
 
 ## Try it
 
-Run the released image over invented projects, with no state
-repository:
+Run the dashboard over invented projects, with no state repository:
 
 ```bash
-docker run --rm -p 8080:8080 ghcr.io/aimd54/gellee:vX.Y.Z --demo
+docker run --rm -p 8080:8080 ghcr.io/aimd54/gellee:v0.2.0 --demo
 ```
 
-and open <http://127.0.0.1:8080>. The tag must be a release that
-includes `--demo`. From a built checkout, `gellee serve --demo` does the
-same; see [the dashboard guide](docs/dashboard.md#demo).
+and open <http://127.0.0.1:8080>. From a built checkout,
+`gellee serve --demo` does the same; see
+[the dashboard guide](docs/dashboard.md#demo).
 
 ## Install
 
-gellee is installed on every machine you work on, from a clone of this
-repository, together with a private repository that holds the state.
-Requirements, the directory layout and the setup steps are in
-[docs/install.md](docs/install.md).
-
-## The server image
-
-The dashboard server is published as `ghcr.io/aimd54/gellee:vX.Y.Z`.
-Deploy it by digest. Each image is signed with cosign, keyless, from the
-release workflow. To verify an image:
-
-```bash
-cosign verify ghcr.io/aimd54/gellee@sha256:<digest> \
-  --certificate-identity-regexp '^https://github.com/aimd54/gellee/\.github/workflows/release\.yml@refs/tags/v' \
-  --certificate-oidc-issuer https://token.actions.githubusercontent.com
-```
-
-The digest of each release is in its release notes.
+gellee is installed from a clone of this repository on every machine you
+work on, together with a private repository that holds the state. See
+[docs/install.md](docs/install.md), which also covers verifying the
+signed server image.
 
 ## Documentation
 
-- [Architecture](docs/architecture.md)
-- [Architecture decision records](docs/adr/)
-- [Installation](docs/install.md)
-- [The status convention](docs/status-convention.md)
-- [The dashboard](docs/dashboard.md)
-- [Memories](docs/memories.md)
-- [Continuous integration](docs/ci.md)
-- [Roadmap](docs/roadmap.md)
+[Architecture](docs/architecture.md) |
+[Decision records](docs/adr/) |
+[Status convention](docs/status-convention.md) |
+[Dashboard](docs/dashboard.md) |
+[Memories](docs/memories.md) |
+[Continuous integration](docs/ci.md) |
+[Roadmap](docs/roadmap.md)
 
-## Contributing, security, licence
-
-- Contributing: [CONTRIBUTING.md](CONTRIBUTING.md)
-- Security reports: [SECURITY.md](SECURITY.md)
-- Licence: [Apache-2.0](LICENSE)
+Contributing: [CONTRIBUTING.md](CONTRIBUTING.md) | Security reports:
+[SECURITY.md](SECURITY.md) | Licence: [Apache-2.0](LICENSE)
