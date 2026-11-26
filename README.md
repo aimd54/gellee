@@ -1,6 +1,11 @@
 <!-- markdownlint-disable MD033 MD041 -->
 <div align="center">
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/mark-dark.svg">
+  <img src="docs/assets/mark-light.svg" alt="" width="64" height="64">
+</picture>
+
 # gellee
 
 **Every Claude Code session starts where the last one stopped, on any
