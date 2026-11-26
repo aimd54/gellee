@@ -5,11 +5,17 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
+	"syscall"
 	"testing"
+	"time"
 )
 
 func TestRunWithoutCommandPrintsUsage(t *testing.T) {
@@ -127,6 +133,92 @@ func TestServeDemoIgnoresTheStateAndRemovesItsDirectory(t *testing.T) {
 	}
 	if strings.Contains(errw.String(), "config") || !strings.Contains(errw.String(), "invalid port") {
 		t.Fatalf("stderr %q, want the listen error and no state error", errw.String())
+	}
+	left, err := os.ReadDir(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) != 0 {
+		t.Fatalf("left in TMPDIR: %v", left)
+	}
+}
+
+// syncBuffer is a buffer the serving goroutine writes and the test reads.
+type syncBuffer struct {
+	mu sync.Mutex
+	b  bytes.Buffer
+}
+
+func (s *syncBuffer) Write(p []byte) (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.Write(p)
+}
+
+func (s *syncBuffer) String() string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.b.String()
+}
+
+func TestServeDemoAnswersMarkedAndIsRemovedAfterASignal(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("TMPDIR", tmp)
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatal(err)
+	}
+	addr := ln.Addr().String()
+	_ = ln.Close()
+	var out, errw syncBuffer
+	done := make(chan int, 1)
+	go func() {
+		done <- run([]string{"serve", "--demo", "--today", "2026-11-11", "--listen", addr}, &out, &errw)
+	}()
+
+	var health map[string]any
+	deadline := time.Now().Add(10 * time.Second)
+	for health == nil {
+		if time.Now().After(deadline) {
+			t.Fatalf("no health answer; stderr %q", errw.String())
+		}
+		resp, err := http.Get("http://" + addr + "/api/v1/health")
+		if err != nil {
+			time.Sleep(20 * time.Millisecond)
+			continue
+		}
+		var body map[string]any
+		err = json.NewDecoder(resp.Body).Decode(&body)
+		_ = resp.Body.Close()
+		if err == nil && resp.StatusCode == http.StatusOK {
+			health = body
+		}
+	}
+	if health["demo"] != true || health["projects"] != float64(7) {
+		t.Errorf("health %v, want demo true and 7 projects", health)
+	}
+
+	entries, err := os.ReadDir(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) != 1 || !strings.HasPrefix(entries[0].Name(), "gellee-demo-") {
+		t.Fatalf("TMPDIR holds %v, want one gellee-demo- directory", entries)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, entries[0].Name(), "config")); err != nil {
+		t.Errorf("the demo directory has no config: %v", err)
+	}
+
+	if err := syscall.Kill(os.Getpid(), syscall.SIGINT); err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case code := <-done:
+		if code != 0 {
+			t.Fatalf("exit code %d, stderr %q", code, errw.String())
+		}
+	case <-time.After(10 * time.Second):
+		t.Fatalf("no exit after the signal; stderr %q", errw.String())
 	}
 	left, err := os.ReadDir(tmp)
 	if err != nil {
