@@ -270,7 +270,7 @@
         "cache_read": 1199052,
         "messages": 103,
         "tokens": 99914,
-        "cost": 0.8992416
+        "cost": 0.899242
       },
       "usage_30": {
         "input": 15389,
@@ -279,7 +279,7 @@
         "cache_read": 3695616,
         "messages": 287,
         "tokens": 307948,
-        "cost": 2.7715743
+        "cost": 2.771574
       },
       "usage_all": {
         "input": 15389,
@@ -288,7 +288,7 @@
         "cache_read": 3695616,
         "messages": 287,
         "tokens": 307948,
-        "cost": 2.7715743
+        "cost": 2.771574
       }
     },
     {
@@ -338,7 +338,7 @@
         "cache_read": 17102256,
         "messages": 450,
         "tokens": 1425154,
-        "cost": 28.224778349999998
+        "cost": 28.224778
       },
       "usage_30": {
         "input": 248991,
@@ -347,7 +347,7 @@
         "cache_read": 59767956,
         "messages": 1658,
         "tokens": 4980545,
-        "cost": 105.1500385
+        "cost": 105.150039
       },
       "usage_all": {
         "input": 309340,
@@ -356,7 +356,7 @@
         "cache_read": 74254368,
         "messages": 2091,
         "tokens": 6187713,
-        "cost": 141.36522799999995
+        "cost": 141.365228
       }
     },
     {
@@ -400,7 +400,7 @@
         "cache_read": 1103736,
         "messages": 90,
         "tokens": 91971,
-        "cost": 0.8277588
+        "cost": 0.827759
       },
       "usage_30": {
         "input": 11910,
@@ -409,7 +409,7 @@
         "cache_read": 2860452,
         "messages": 251,
         "tokens": 238347,
-        "cost": 2.14516935
+        "cost": 2.145169
       },
       "usage_all": {
         "input": 11910,
@@ -418,7 +418,7 @@
         "cache_read": 2860452,
         "messages": 251,
         "tokens": 238347,
-        "cost": 2.14516935
+        "cost": 2.145169
       }
     },
     {
@@ -462,7 +462,7 @@
         "cache_read": 4428132,
         "messages": 160,
         "tokens": 368998,
-        "cost": 11.070001999999999
+        "cost": 11.070002
       },
       "usage_30": {
         "input": 75056,
@@ -492,6 +492,6 @@
     "cache_read": 23833176,
     "messages": 803,
     "tokens": 1986037,
-    "cost": 41.02178075000001
+    "cost": 41.021781
   }
 }

@@ -10,11 +10,13 @@ import (
 	"encoding/json"
 	"flag"
 	"io/fs"
+	"math"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -187,17 +189,23 @@ func TestUsageUnderTheFormerNameIsRenamed(t *testing.T) {
 
 func TestOneModelHasNoPrice(t *testing.T) {
 	_, snap := build(t, anchor)
+	matched := 0
 	for _, p := range snap.Projects() {
 		switch p.Key {
 		case "garden/trellis":
+			matched++
 			if p.UsageAll.Tokens == 0 || p.UsageAll.Cost != nil {
 				t.Errorf("trellis usage %+v, want tokens and no cost", p.UsageAll)
 			}
 		case "studio/loom":
+			matched++
 			if p.UsageAll.Tokens == 0 || p.UsageAll.Cost == nil {
 				t.Errorf("loom usage %+v, want tokens and a cost", p.UsageAll)
 			}
 		}
+	}
+	if matched != 2 {
+		t.Fatalf("%d of trellis and loom seen, want both", matched)
 	}
 }
 
@@ -260,6 +268,58 @@ func TestUsageMonthsFollowTheAnchor(t *testing.T) {
 	}
 }
 
+// roundCosts returns raw with every "cost" number, at any depth,
+// rounded to 6 decimal places. Key order and other values are kept.
+func roundCosts(t *testing.T, raw json.RawMessage) json.RawMessage {
+	t.Helper()
+	trimmed := bytes.TrimSpace(raw)
+	switch {
+	case len(trimmed) > 0 && trimmed[0] == '{':
+		var fields []json.RawMessage
+		dec := json.NewDecoder(bytes.NewReader(trimmed))
+		if _, err := dec.Token(); err != nil {
+			t.Fatal(err)
+		}
+		for dec.More() {
+			k, err := dec.Token()
+			if err != nil {
+				t.Fatal(err)
+			}
+			var v json.RawMessage
+			if err := dec.Decode(&v); err != nil {
+				t.Fatal(err)
+			}
+			key, _ := json.Marshal(k)
+			var f float64
+			if k == "cost" && json.Unmarshal(v, &f) == nil {
+				v = json.RawMessage(strconv.FormatFloat(math.Round(f*1e6)/1e6, 'g', -1, 64))
+			} else {
+				v = roundCosts(t, v)
+			}
+			fields = append(fields, append(append(key, ':'), v...))
+		}
+		return json.RawMessage("{" + string(bytes.Join(toBytes(fields), []byte(","))) + "}")
+	case len(trimmed) > 0 && trimmed[0] == '[':
+		var items []json.RawMessage
+		if err := json.Unmarshal(trimmed, &items); err != nil {
+			t.Fatal(err)
+		}
+		for i := range items {
+			items[i] = roundCosts(t, items[i])
+		}
+		return json.RawMessage("[" + string(bytes.Join(toBytes(items), []byte(","))) + "]")
+	}
+	return trimmed
+}
+
+func toBytes(in []json.RawMessage) [][]byte {
+	out := make([][]byte, len(in))
+	for i, m := range in {
+		out[i] = m
+	}
+	return out
+}
+
 func TestTheOverviewMatchesItsGoldenFile(t *testing.T) {
 	dir, _ := build(t, anchor)
 	h := server.New(dir, fstest.MapFS{}, func() time.Time { return anchor }, time.Minute).Handler()
@@ -268,10 +328,13 @@ func TestTheOverviewMatchesItsGoldenFile(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("code %d: %s", rec.Code, rec.Body.String())
 	}
+	// Costs are sums of floats, whose last digits depend on fused
+	// multiply-add; six places are stable across platforms.
 	var got bytes.Buffer
-	if err := json.Indent(&got, rec.Body.Bytes(), "", "  "); err != nil {
+	if err := json.Indent(&got, roundCosts(t, rec.Body.Bytes()), "", "  "); err != nil {
 		t.Fatal(err)
 	}
+	got.WriteByte('\n')
 	golden := filepath.Join("testdata", "overview.json")
 	if *update {
 		if err := os.MkdirAll("testdata", 0o750); err != nil {
