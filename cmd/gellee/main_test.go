@@ -113,3 +113,26 @@ func TestCollectCommandReadsTheMemoryStoreFromTheEnvironment(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// An address with an invalid port fails after the demo is written and
+// read, so the run shows both the demo's startup and its cleanup.
+func TestServeDemoIgnoresTheStateAndRemovesItsDirectory(t *testing.T) {
+	tmp := t.TempDir()
+	t.Setenv("TMPDIR", tmp)
+	t.Setenv("GELLEE_STATE", filepath.Join(tmp, "nope"))
+	var out, errw bytes.Buffer
+	code := run([]string{"serve", "--demo", "--today", "2026-11-11", "--listen", "127.0.0.1:-1"}, &out, &errw)
+	if code != 1 || !strings.Contains(out.String(), "gellee: serving the demo on http://127.0.0.1:-1") {
+		t.Fatalf("code %d stdout %q stderr %q", code, out.String(), errw.String())
+	}
+	if strings.Contains(errw.String(), "config") || !strings.Contains(errw.String(), "invalid port") {
+		t.Fatalf("stderr %q, want the listen error and no state error", errw.String())
+	}
+	left, err := os.ReadDir(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(left) != 0 {
+		t.Fatalf("left in TMPDIR: %v", left)
+	}
+}

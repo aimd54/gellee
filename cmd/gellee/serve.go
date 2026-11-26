@@ -15,6 +15,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aimd54/gellee/internal/demo"
 	"github.com/aimd54/gellee/internal/server"
 	"github.com/aimd54/gellee/web"
 )
@@ -26,6 +27,7 @@ func runServe(args []string, out, errw io.Writer) int {
 	listen := fs.String("listen", "127.0.0.1:8080", "address to listen on")
 	refresh := fs.Duration("refresh", time.Minute, "how long a snapshot is served before the files are read again")
 	today := fs.String("today", "", "fix the current date (YYYY-MM-DD), for tests and demonstrations")
+	demoMode := fs.Bool("demo", false, "serve invented data from a temporary directory, ignoring --state")
 	if err := fs.Parse(args); err != nil {
 		return 2
 	}
@@ -39,7 +41,21 @@ func runServe(args []string, out, errw io.Writer) int {
 		fixed := day.Add(12 * time.Hour)
 		now = func() time.Time { return fixed }
 	}
-	if _, err := server.Build(*stateDir, now()); err != nil {
+	dir, what := *stateDir, *stateDir
+	if *demoMode {
+		tmp, err := os.MkdirTemp("", "gellee-demo-")
+		if err != nil {
+			fmt.Fprintf(errw, "gellee: %v\n", err)
+			return 1
+		}
+		defer func() { _ = os.RemoveAll(tmp) }()
+		if err := demo.Write(tmp, now()); err != nil {
+			fmt.Fprintf(errw, "gellee: demo: %v\n", err)
+			return 1
+		}
+		dir, what = tmp, "the demo"
+	}
+	if _, err := server.Build(dir, now()); err != nil {
 		fmt.Fprintf(errw, "gellee: %v\n", err)
 		return 1
 	}
@@ -48,9 +64,11 @@ func runServe(args []string, out, errw io.Writer) int {
 		fmt.Fprintf(errw, "gellee: %v\n", err)
 		return 1
 	}
+	api := server.New(dir, ui, now, *refresh)
+	api.Demo = *demoMode
 	srv := &http.Server{
 		Addr:              *listen,
-		Handler:           server.New(*stateDir, ui, now, *refresh).Handler(),
+		Handler:           api.Handler(),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -59,7 +77,7 @@ func runServe(args []string, out, errw io.Writer) int {
 		<-ctx.Done()
 		_ = srv.Shutdown(context.Background())
 	}()
-	fmt.Fprintf(out, "gellee: serving %s on http://%s\n", *stateDir, *listen)
+	fmt.Fprintf(out, "gellee: serving %s on http://%s\n", what, *listen)
 	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		fmt.Fprintf(errw, "gellee: %v\n", err)
 		return 1
