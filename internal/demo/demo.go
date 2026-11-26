@@ -63,5 +63,3 @@ func writeFiles(dir string, anchor time.Time) error {
 		return os.WriteFile(out, data, 0o644) //nolint:gosec // invented data, not a secret
 	})
 }
-
-func writeData(string, time.Time) error { return nil }

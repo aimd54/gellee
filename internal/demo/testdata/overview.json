@@ -1,0 +1,497 @@
+{
+  "active": 4,
+  "built": "2026-11-11T12:00:00Z",
+  "collected": "2026-11-11T11:50:00Z",
+  "days": [
+    {
+      "day": "2026-10-13",
+      "tokens": {
+        "studio/pathfinder": 24455
+      }
+    },
+    {
+      "day": "2026-10-14",
+      "tokens": {
+        "studio/loom": 38760,
+        "studio/pathfinder": 116027
+      }
+    },
+    {
+      "day": "2026-10-15",
+      "tokens": {}
+    },
+    {
+      "day": "2026-10-16",
+      "tokens": {
+        "garden/trellis": 11780,
+        "studio/loom": 28880,
+        "studio/pathfinder": 102902
+      }
+    },
+    {
+      "day": "2026-10-17",
+      "tokens": {
+        "garden/seedbank": 45431
+      }
+    },
+    {
+      "day": "2026-10-18",
+      "tokens": {
+        "garden/seedbank": 23614,
+        "garden/trellis": 30502,
+        "studio/loom": 172689,
+        "studio/pathfinder": 23396
+      }
+    },
+    {
+      "day": "2026-10-19",
+      "tokens": {
+        "garden/trellis": 17215,
+        "studio/pathfinder": 99404
+      }
+    },
+    {
+      "day": "2026-10-20",
+      "tokens": {
+        "garden/trellis": 25963,
+        "studio/loom": 156025,
+        "studio/pathfinder": 34082
+      }
+    },
+    {
+      "day": "2026-10-21",
+      "tokens": {
+        "garden/trellis": 32862
+      }
+    },
+    {
+      "day": "2026-10-22",
+      "tokens": {
+        "studio/loom": 219077,
+        "studio/loom-site": 15764
+      }
+    },
+    {
+      "day": "2026-10-23",
+      "tokens": {
+        "garden/trellis": 14129,
+        "studio/loom": 248476,
+        "studio/pathfinder": 98328
+      }
+    },
+    {
+      "day": "2026-10-24",
+      "tokens": {
+        "garden/trellis": 27888,
+        "studio/loom": 254266,
+        "studio/pathfinder": 94933
+      }
+    },
+    {
+      "day": "2026-10-25",
+      "tokens": {
+        "studio/loom": 404265
+      }
+    },
+    {
+      "day": "2026-10-26",
+      "tokens": {
+        "studio/loom": 90789,
+        "studio/pathfinder": 99854
+      }
+    },
+    {
+      "day": "2026-10-27",
+      "tokens": {
+        "garden/trellis": 26122,
+        "studio/loom": 486656,
+        "studio/loom-site": 24738,
+        "studio/pathfinder": 67640
+      }
+    },
+    {
+      "day": "2026-10-28",
+      "tokens": {
+        "studio/loom-site": 20409,
+        "studio/pathfinder": 83985
+      }
+    },
+    {
+      "day": "2026-10-29",
+      "tokens": {
+        "garden/seedbank": 34640,
+        "studio/pathfinder": 71935
+      }
+    },
+    {
+      "day": "2026-10-30",
+      "tokens": {
+        "garden/trellis": 24420,
+        "studio/loom": 417916,
+        "studio/pathfinder": 107592
+      }
+    },
+    {
+      "day": "2026-10-31",
+      "tokens": {
+        "garden/seedbank": 56238,
+        "studio/loom": 37015,
+        "studio/loom-site": 26502,
+        "studio/pathfinder": 107960
+      }
+    },
+    {
+      "day": "2026-11-01",
+      "tokens": {
+        "studio/loom": 84146
+      }
+    },
+    {
+      "day": "2026-11-02",
+      "tokens": {
+        "studio/loom": 334777,
+        "studio/loom-site": 16548
+      }
+    },
+    {
+      "day": "2026-11-03",
+      "tokens": {
+        "garden/seedbank": 30851,
+        "studio/loom": 346681,
+        "studio/loom-site": 42415
+      }
+    },
+    {
+      "day": "2026-11-04",
+      "tokens": {
+        "garden/seedbank": 17260,
+        "studio/loom": 234973
+      }
+    },
+    {
+      "day": "2026-11-05",
+      "tokens": {
+        "studio/loom": 325903,
+        "studio/pathfinder": 98744
+      }
+    },
+    {
+      "day": "2026-11-06",
+      "tokens": {
+        "studio/loom": 287815,
+        "studio/pathfinder": 104942
+      }
+    },
+    {
+      "day": "2026-11-07",
+      "tokens": {}
+    },
+    {
+      "day": "2026-11-08",
+      "tokens": {
+        "garden/seedbank": 17657,
+        "studio/loom": 380308
+      }
+    },
+    {
+      "day": "2026-11-09",
+      "tokens": {
+        "studio/pathfinder": 122890
+      }
+    },
+    {
+      "day": "2026-11-10",
+      "tokens": {
+        "garden/seedbank": 24517,
+        "studio/loom": 94349,
+        "studio/loom-site": 52223
+      }
+    },
+    {
+      "day": "2026-11-11",
+      "tokens": {
+        "garden/seedbank": 57740,
+        "studio/loom": 336779,
+        "studio/loom-site": 39748,
+        "studio/pathfinder": 42422
+      }
+    }
+  ],
+  "limit": 3,
+  "over": 1,
+  "problems": [],
+  "projects": [
+    {
+      "key": "garden/seedbank",
+      "tracked": true,
+      "state": "active",
+      "group": "",
+      "parked_reason": "",
+      "superseded_by": "",
+      "updated": "2026-11-10",
+      "next": "Push the import, then add a report of seeds older than three years.",
+      "stopped": "Germination records import from the spring catalogue. Two commits are not pushed.",
+      "git": {
+        "laptop": {
+          "branch": "main",
+          "head": "8b14d07",
+          "last_commit": "2026-11-07T12:00:00Z",
+          "remote": true,
+          "ahead": 2,
+          "dirty": 0
+        },
+        "worker-1": {
+          "branch": "main",
+          "head": "8b14d07",
+          "last_commit": "2026-11-07T12:00:00Z",
+          "remote": true,
+          "ahead": 0,
+          "dirty": 0
+        }
+      },
+      "warnings": [
+        "unpushed"
+      ],
+      "last_session": {
+        "machine": "desktop",
+        "id": "00000000-0000-4000-8000-000000000007",
+        "project": "garden/seedbank",
+        "branch": "main",
+        "title": "Import the spring catalogue",
+        "remote": "",
+        "started": "2026-11-10T06:00:00Z",
+        "last": "2026-11-10T08:00:00Z",
+        "ended": true
+      },
+      "usage_7": {
+        "input": 4992,
+        "output": 14986,
+        "cache_write": 79936,
+        "cache_read": 1199052,
+        "messages": 103,
+        "tokens": 99914,
+        "cost": 0.8992416
+      },
+      "usage_30": {
+        "input": 15389,
+        "output": 46189,
+        "cache_write": 246370,
+        "cache_read": 3695616,
+        "messages": 287,
+        "tokens": 307948,
+        "cost": 2.7715743
+      },
+      "usage_all": {
+        "input": 15389,
+        "output": 46189,
+        "cache_write": 246370,
+        "cache_read": 3695616,
+        "messages": 287,
+        "tokens": 307948,
+        "cost": 2.7715743
+      }
+    },
+    {
+      "key": "studio/loom",
+      "tracked": true,
+      "state": "active",
+      "group": "loom",
+      "parked_reason": "",
+      "superseded_by": "",
+      "updated": "2026-11-11",
+      "next": "Thread the heddle frame into the loom core, then rerun the timing test against the full pattern set.",
+      "stopped": "The heddle frame drives the warp in the simulator. The timing test on branch `feat/heddles` passes locally.",
+      "git": {
+        "desktop": {
+          "branch": "feat/heddles",
+          "head": "1d7e8f2",
+          "last_commit": "2026-11-10T09:00:00Z",
+          "remote": true,
+          "ahead": 0,
+          "dirty": 0
+        },
+        "laptop": {
+          "branch": "feat/heddles",
+          "head": "3f9c2a1",
+          "last_commit": "2026-11-11T11:20:00Z",
+          "remote": true,
+          "ahead": 0,
+          "dirty": 0
+        }
+      },
+      "warnings": [],
+      "last_session": {
+        "machine": "laptop",
+        "id": "00000000-0000-4000-8000-000000000001",
+        "project": "studio/loom",
+        "branch": "feat/heddles",
+        "title": "Thread the heddle frame",
+        "remote": "",
+        "started": "2026-11-11T10:00:00Z",
+        "last": "2026-11-11T11:55:00Z",
+        "ended": false
+      },
+      "usage_7": {
+        "input": 71246,
+        "output": 213767,
+        "cache_write": 1140141,
+        "cache_read": 17102256,
+        "messages": 450,
+        "tokens": 1425154,
+        "cost": 28.224778349999998
+      },
+      "usage_30": {
+        "input": 248991,
+        "output": 747060,
+        "cache_write": 3984494,
+        "cache_read": 59767956,
+        "messages": 1658,
+        "tokens": 4980545,
+        "cost": 105.1500385
+      },
+      "usage_all": {
+        "input": 309340,
+        "output": 928128,
+        "cache_write": 4950245,
+        "cache_read": 74254368,
+        "messages": 2091,
+        "tokens": 6187713,
+        "cost": 141.36522799999995
+      }
+    },
+    {
+      "key": "studio/loom-site",
+      "tracked": true,
+      "state": "active",
+      "group": "loom",
+      "parked_reason": "",
+      "superseded_by": "",
+      "updated": "2026-11-11",
+      "next": "Write the captions for the first twelve patterns and commit the gallery.",
+      "stopped": "The pattern gallery lays out in a grid. The captions are not written.",
+      "git": {
+        "desktop": {
+          "branch": "main",
+          "head": "a71c3e4",
+          "last_commit": "2026-11-11T08:00:00Z",
+          "remote": true,
+          "ahead": 0,
+          "dirty": 3
+        }
+      },
+      "warnings": [
+        "uncommitted"
+      ],
+      "last_session": {
+        "machine": "desktop",
+        "id": "00000000-0000-4000-8000-000000000006",
+        "project": "studio/loom-site",
+        "branch": "main",
+        "title": "Fix the gallery grid",
+        "remote": "",
+        "started": "2026-11-11T07:00:00Z",
+        "last": "2026-11-11T08:45:00Z",
+        "ended": true
+      },
+      "usage_7": {
+        "input": 4596,
+        "output": 13795,
+        "cache_write": 73580,
+        "cache_read": 1103736,
+        "messages": 90,
+        "tokens": 91971,
+        "cost": 0.8277588
+      },
+      "usage_30": {
+        "input": 11910,
+        "output": 35748,
+        "cache_write": 190689,
+        "cache_read": 2860452,
+        "messages": 251,
+        "tokens": 238347,
+        "cost": 2.14516935
+      },
+      "usage_all": {
+        "input": 11910,
+        "output": 35748,
+        "cache_write": 190689,
+        "cache_read": 2860452,
+        "messages": 251,
+        "tokens": 238347,
+        "cost": 2.14516935
+      }
+    },
+    {
+      "key": "studio/pathfinder",
+      "tracked": true,
+      "state": "active",
+      "group": "",
+      "parked_reason": "",
+      "superseded_by": "",
+      "updated": "2026-11-09",
+      "next": "Compare the new planner with the old one on the three sample maps and keep the faster.",
+      "stopped": "The planner routes around closed paths on the sample map. Benchmarks are on branch `route-closures`.",
+      "git": {
+        "worker-1": {
+          "branch": "route-closures",
+          "head": "9a0b1c2",
+          "last_commit": "2026-11-11T11:40:00Z",
+          "remote": true,
+          "ahead": 0,
+          "dirty": 0
+        }
+      },
+      "warnings": [
+        "stale"
+      ],
+      "last_session": {
+        "machine": "worker-1",
+        "id": "00000000-0000-4000-8000-000000000009",
+        "project": "studio/pathfinder",
+        "branch": "route-closures",
+        "title": "Route around closed paths",
+        "remote": "",
+        "started": "2026-11-11T10:30:00Z",
+        "last": "2026-11-11T11:58:00Z",
+        "ended": false
+      },
+      "usage_7": {
+        "input": 18447,
+        "output": 55347,
+        "cache_write": 295204,
+        "cache_read": 4428132,
+        "messages": 160,
+        "tokens": 368998,
+        "cost": 11.070001999999999
+      },
+      "usage_30": {
+        "input": 75056,
+        "output": 225209,
+        "cache_write": 1201226,
+        "cache_read": 18018684,
+        "messages": 831,
+        "tokens": 1501491,
+        "cost": 45.045019
+      },
+      "usage_all": {
+        "input": 75056,
+        "output": 225209,
+        "cache_write": 1201226,
+        "cache_read": 18018684,
+        "messages": 831,
+        "tokens": 1501491,
+        "cost": 45.045019
+      }
+    }
+  ],
+  "today": "2026-11-11",
+  "week": {
+    "input": 99281,
+    "output": 297895,
+    "cache_write": 1588861,
+    "cache_read": 23833176,
+    "messages": 803,
+    "tokens": 1986037,
+    "cost": 41.02178075000001
+  }
+}

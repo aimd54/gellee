@@ -4,16 +4,25 @@
 package demo_test
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"flag"
 	"io/fs"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/aimd54/gellee/internal/demo"
 	"github.com/aimd54/gellee/internal/server"
+	"github.com/aimd54/gellee/internal/state"
 )
 
 var anchor = time.Date(2026, 11, 11, 12, 0, 0, 0, time.UTC)
@@ -87,5 +96,196 @@ func TestNoTemplateIsLeftInTheTree(t *testing.T) {
 	}
 	if n < 9 {
 		t.Fatalf("%d files written, want at least the config, prices and 7 statuses", n)
+	}
+}
+
+var update = flag.Bool("update", false, "rewrite the golden files")
+
+func TestEveryWarningIsOnItsProject(t *testing.T) {
+	_, snap := build(t, anchor)
+	got := map[string]string{}
+	active := 0
+	for _, p := range snap.Projects() {
+		got[p.Key] = strings.Join(p.Warnings, ",")
+		if p.State == "active" {
+			active++
+		}
+	}
+	want := map[string]string{
+		"studio/loom": "", "studio/loom-site": "uncommitted", "studio/pathfinder": "stale",
+		"garden/seedbank": "unpushed", "garden/trellis": "", "garden/almanac": "", "studio/weft": "",
+	}
+	for key, w := range want {
+		if g, ok := got[key]; !ok || g != w {
+			t.Errorf("%s warnings %q, want %q", key, g, w)
+		}
+	}
+	if active != 4 || snap.Config.Limit != 3 {
+		t.Fatalf("%d active against a limit of %d, want 4 against 3", active, snap.Config.Limit)
+	}
+}
+
+func TestTheWorkersTellTheirStory(t *testing.T) {
+	_, snap := build(t, anchor)
+	byName := map[string]server.Worker{}
+	for _, w := range snap.Workers() {
+		byName[w.Name] = w
+	}
+	running := func(w server.Worker, project string) bool {
+		for _, s := range w.Sessions {
+			if s.Project == project && !s.Ended {
+				return true
+			}
+		}
+		return false
+	}
+	laptop, desktop, worker := byName["laptop"], byName["desktop"], byName["worker-1"]
+	if !laptop.Up || laptop.Behind || !running(laptop, "studio/loom") {
+		t.Errorf("laptop %+v", laptop)
+	}
+	if desktop.Up || !desktop.Behind || desktop.Memories == nil || desktop.Memories.SetAside != 2 {
+		t.Errorf("desktop %+v", desktop)
+	}
+	if !worker.Up || worker.Memories == nil || !worker.Memories.Stale || !running(worker, "studio/pathfinder") {
+		t.Errorf("worker-1 %+v", worker)
+	}
+	n := 0
+	for _, w := range byName {
+		n += len(w.Sessions)
+	}
+	if len(byName) != 3 || n != 11 {
+		t.Fatalf("%d workers with %d sessions, want 3 with 11", len(byName), n)
+	}
+}
+
+func TestUsageUnderTheFormerNameIsRenamed(t *testing.T) {
+	dir, snap := build(t, anchor)
+	raw, err := state.MachineRows(dir, "laptop")
+	if err != nil {
+		t.Fatal(err)
+	}
+	written := 0
+	for _, r := range raw {
+		if r.Project == "studio/shuttle" {
+			written++
+		}
+	}
+	old := server.DayOffset(snap.Today, -21)
+	renamed := 0
+	for _, r := range snap.Rows {
+		if r.Project == "studio/shuttle" {
+			t.Fatalf("row still under studio/shuttle: %+v", r)
+		}
+		if r.Project == "studio/loom" && r.Day <= old {
+			renamed++
+		}
+	}
+	if written == 0 || renamed == 0 {
+		t.Fatalf("%d rows written under studio/shuttle, %d read as studio/loom", written, renamed)
+	}
+}
+
+func TestOneModelHasNoPrice(t *testing.T) {
+	_, snap := build(t, anchor)
+	for _, p := range snap.Projects() {
+		switch p.Key {
+		case "garden/trellis":
+			if p.UsageAll.Tokens == 0 || p.UsageAll.Cost != nil {
+				t.Errorf("trellis usage %+v, want tokens and no cost", p.UsageAll)
+			}
+		case "studio/loom":
+			if p.UsageAll.Tokens == 0 || p.UsageAll.Cost == nil {
+				t.Errorf("loom usage %+v, want tokens and a cost", p.UsageAll)
+			}
+		}
+	}
+}
+
+// digests maps every file below dir to its SHA-256.
+func digests(t *testing.T, dir string) map[string]string {
+	t.Helper()
+	out := map[string]string{}
+	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		rel, _ := filepath.Rel(dir, path)
+		sum := sha256.Sum256(data)
+		out[rel] = hex.EncodeToString(sum[:])
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func TestTheSameAnchorGivesTheSameBytes(t *testing.T) {
+	a, _ := build(t, anchor)
+	b, _ := build(t, anchor)
+	da, db := digests(t, a), digests(t, b)
+	if len(da) < 15 {
+		t.Fatalf("%d files, want the statuses and the usage, git and machine files", len(da))
+	}
+	for name, sum := range da {
+		if db[name] != sum {
+			t.Errorf("%s differs between two writes", name)
+		}
+	}
+	if len(da) != len(db) {
+		t.Fatalf("%d files against %d", len(da), len(db))
+	}
+}
+
+func TestUsageMonthsFollowTheAnchor(t *testing.T) {
+	_, nov := build(t, anchor)
+	dir, dec := build(t, time.Date(2026, 12, 3, 12, 0, 0, 0, time.UTC))
+	entries, err := os.ReadDir(filepath.Join(dir, "usage", "laptop"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, e := range entries {
+		names = append(names, e.Name())
+	}
+	if strings.Join(names, " ") != "2026-10.jsonl 2026-11.jsonl 2026-12.jsonl" {
+		t.Fatalf("laptop usage files %q", names)
+	}
+	if len(dec.Rows) == 0 || len(dec.Rows) != len(nov.Rows) {
+		t.Fatalf("%d rows in December, %d in November", len(dec.Rows), len(nov.Rows))
+	}
+}
+
+func TestTheOverviewMatchesItsGoldenFile(t *testing.T) {
+	dir, _ := build(t, anchor)
+	h := server.New(dir, fstest.MapFS{}, func() time.Time { return anchor }, time.Minute).Handler()
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/api/v1/overview", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("code %d: %s", rec.Code, rec.Body.String())
+	}
+	var got bytes.Buffer
+	if err := json.Indent(&got, rec.Body.Bytes(), "", "  "); err != nil {
+		t.Fatal(err)
+	}
+	golden := filepath.Join("testdata", "overview.json")
+	if *update {
+		if err := os.MkdirAll("testdata", 0o750); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(golden, got.Bytes(), 0o644); err != nil { //nolint:gosec // a test fixture
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(golden)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got.Bytes(), want) {
+		t.Fatalf("overview differs from %s; rerun with -update after checking the change\n%s", golden, got.String())
 	}
 }
